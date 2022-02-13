@@ -49,6 +49,7 @@ type Config struct {
 	ChanEvents         chan trace.Event
 	ChanErrors         chan error
 	ProcessInfo        bool
+	OnEventRecv        func()
 }
 
 type CaptureConfig struct {
