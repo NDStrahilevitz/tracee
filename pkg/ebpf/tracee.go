@@ -70,6 +70,7 @@ type Config struct {
 	Sockets            runtime.Sockets
 	ContainersEnrich   bool
 	EngineConfig       engine.Config
+	OnEventRecv        func()
 }
 
 type CaptureConfig struct {
