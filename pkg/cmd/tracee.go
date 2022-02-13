@@ -24,6 +24,7 @@ type Runner struct {
 func (r Runner) Run(ctx context.Context) error {
 	// Create Tracee Singleton
 
+	r.TraceeConfig.OnEventRecv = func() {}
 	t, err := tracee.New(r.TraceeConfig)
 	if err != nil {
 		return fmt.Errorf("error creating Tracee: %v", err)

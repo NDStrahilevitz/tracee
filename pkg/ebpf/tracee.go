@@ -70,6 +70,7 @@ type Config struct {
 	OSInfo             *helpers.OSInfo
 	Sockets            runtime.Sockets
 	ContainersEnrich   bool
+	OnEventRecv        func()
 }
 
 type CaptureConfig struct {
