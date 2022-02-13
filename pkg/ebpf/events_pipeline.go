@@ -136,6 +136,7 @@ func (t *Tracee) decodeEvents(outerCtx gocontext.Context) (<-chan *trace.Event, 
 		defer close(out)
 		defer close(errc)
 		for dataRaw := range t.eventsChannel {
+			t.config.OnEventRecv()
 			ebpfMsgDecoder := bufferdecoder.New(dataRaw)
 			var ctx bufferdecoder.Context
 			if err := ebpfMsgDecoder.DecodeContext(&ctx); err != nil {
