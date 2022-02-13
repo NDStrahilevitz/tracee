@@ -184,6 +184,7 @@ func main() {
 
 			cfg.ChanEvents = make(chan trace.Event, 1000)
 			cfg.ChanErrors = make(chan error, 10) // buffer to allow next errors without blocking
+			cfg.OnEventRecv = func() {}
 
 			// Create Tracee Singleton
 
