@@ -1,0 +1,47 @@
+syntax = "proto3";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+option go_package = "github.com/aquasecurity/tracee/pkg/rules/grpcsig";
+
+service Signature {
+    rpc GetMetadata(Nothing) returns (SignatureMetadata);
+    rpc GetEventSelectors(Nothing) returns (SignatureEventSelectors);
+    rpc OnEvent(stream Event) returns (stream Finding);
+
+}
+
+message Nothing {}
+
+message SignatureMetadata {
+    string ID = 1;
+    string Version = 2;
+    string Name = 3;
+    string Description = 4;
+    repeated string Tags = 5;
+    map<string, google.protobuf.Any> Properties = 6;
+}
+
+message SignatureEventSelectors {
+    message Selector {
+        string Source = 1;
+	    string Name = 2;
+	    string Origin = 3;
+    }
+
+    repeated Selector EventSelectors = 1;
+}
+
+message Headers {
+    string ContentType = 1;
+    string Origin = 2;
+}
+
+message Event {
+    Headers Headers = 1;
+    google.protobuf.Value Payload = 2;
+}
+
+message Finding {
+    map<string, google.protobuf.Any> Data = 1;
+    Event Context = 2;
+}
