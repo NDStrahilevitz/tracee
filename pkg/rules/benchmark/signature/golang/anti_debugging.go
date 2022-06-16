@@ -43,6 +43,10 @@ func (sig *antiDebugging) GetSelectedEvents() ([]detect.SignatureEventSelector, 
 	}, nil
 }
 
+func (sig *antiDebugging) GetFilters() ([]protocol.Filter, error) {
+	return []protocol.Filter{}, nil
+}
+
 func (sig *antiDebugging) OnEvent(event protocol.Event) error {
 	ee, ok := event.Payload.(trace.Event)
 

@@ -23,6 +23,29 @@ tracee_selected_events[eventSelector] {
 	eventSelector := eventSelectors[_]
 }
 
+filters := [
+	{
+		"field": "event",
+		"operator": 0, #Equal
+		"value": ["hooked_syscalls"]
+	},
+	{
+		#test for hooked_syscalls != [] so non empty
+		"field": "hooked_syscalls.args.hooked_syscalls",
+		"operator": 1,
+		"value": ["[]"]
+	},
+	{
+		"field": "execve.args.envp",
+		"operator": 0,
+		"value": ["*LD_PRELOAD*", "*LD_LIBRARY_PATH"]
+	},
+]
+
+signature_filters[filter] {
+	filter := filters[_]
+}
+
 tracee_match = res {
 	input.eventName == "hooked_syscalls"
 	hooked_syscalls_arr := helpers.get_tracee_argument("hooked_syscalls")

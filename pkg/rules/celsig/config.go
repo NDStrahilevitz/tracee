@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/aquasecurity/tracee/types/detect"
+	"github.com/aquasecurity/tracee/types/protocol"
 	"gopkg.in/yaml.v2"
 )
 
@@ -43,6 +44,9 @@ type SignatureConfig struct {
 	// EventSelectors to dispatch events only to these signatures that know how
 	// to evaluate them.
 	EventSelectors []detect.SignatureEventSelector `yaml:"eventSelectors"`
+
+	// Filters to define which events the signatures need from the source
+	Filters []protocol.Filter `yaml:"filters"`
 
 	// Expression is a CEL expression that is used to evaluate events.
 	// To indicate a possible threat the Expression must evaluate to `true`,

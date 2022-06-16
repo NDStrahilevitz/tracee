@@ -19,6 +19,23 @@ tracee_selected_events[eventSelector] {
 	}
 }
 
+filters := [
+	{
+		"field": "event",
+		"operator": 0, #Equal
+		"value": ["ptrace"]
+	},
+	{
+		"field": "ptrace.args.request",
+		"operator": 0,
+		"value": ["PTRACE_TRACEME"]
+	}
+]
+
+signature_filters[filter] {
+	filter := filters[_]
+}
+
 tracee_match {
 	input.eventName == "ptrace"
 	arg := input.args[_]

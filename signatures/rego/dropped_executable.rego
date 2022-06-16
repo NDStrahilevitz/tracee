@@ -24,6 +24,23 @@ tracee_selected_events[eventSelector] {
 	eventSelector := eventSelectors[_]
 }
 
+filters := [
+	{
+		"field": "event",
+		"operator": 0, #Equal
+		"value": ["magic_write"]
+	},
+	{
+		"field": "magic_write.container",
+		"operator": 0,
+		"value": [true]
+	},
+]
+
+signature_filters[filter] {
+	filter := filters[_]
+}
+
 tracee_match = res {
 	input.eventName == "magic_write"
 
