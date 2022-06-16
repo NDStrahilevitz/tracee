@@ -42,6 +42,10 @@ func (fs regoFakeSignature) GetSelectedEvents() ([]detect.SignatureEventSelector
 	return []detect.SignatureEventSelector{}, nil
 }
 
+func (fs regoFakeSignature) GetFilters() ([]protocol.Filter, error) {
+	return []protocol.Filter{}, nil
+}
+
 func (fs regoFakeSignature) Init(cb detect.SignatureHandler) error {
 	if fs.init != nil {
 		return fs.init(cb)
@@ -89,6 +93,10 @@ func (fs fakeSignature) GetSelectedEvents() ([]detect.SignatureEventSelector, er
 	}
 
 	return []detect.SignatureEventSelector{}, nil
+}
+
+func (fs fakeSignature) GetFilters() ([]protocol.Filter, error) {
+	return []protocol.Filter{}, nil
 }
 
 func (fs fakeSignature) Init(cb detect.SignatureHandler) error {
@@ -587,4 +595,71 @@ func TestEngine_LoadSignature(t *testing.T) {
 		})
 	}
 
+}
+
+func TestMediateFilters(t *testing.T) {
+	testCases := []struct {
+		name     string
+		filters  []protocol.Filter
+		expected []protocol.Filter
+	}{
+		{
+			name: "one filter - no mediation needed",
+			filters: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+			},
+			expected: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+			},
+		},
+		{
+			name: "two of the same filters - should output one value",
+			filters: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+			},
+			expected: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+			},
+		},
+		{
+			name: "two filters on same field - should combine",
+			filters: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{2}},
+			},
+			expected: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1, 2}},
+			},
+		},
+		{
+			name: "sanity - three filters on same field with duplicate - should combine",
+			filters: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{2}},
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+			},
+			expected: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1, 2}},
+			},
+		},
+		{
+			name: "three filters with different fields - should combine",
+			filters: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1}},
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{2}},
+				{Field: "test2", Operator: protocol.Equal, Value: []interface{}{1}},
+			},
+			expected: []protocol.Filter{
+				{Field: "test", Operator: protocol.Equal, Value: []interface{}{1, 2}},
+				{Field: "test2", Operator: protocol.Equal, Value: []interface{}{1}},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.ElementsMatch(t, tc.expected, mediateFilters(tc.filters))
+		})
+	}
 }
