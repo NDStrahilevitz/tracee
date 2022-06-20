@@ -32,17 +32,17 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["security_file_open", "execve"]
 	},
 	{
 		"field": "security_file_open.args.pathname",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": ["/etc/ld.so.preload"]
 	},
 	{
 		"field": "execve.args.envp",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": ["*LD_PRELOAD*", "*LD_LIBRARY_PATH"]
 	},
 ]

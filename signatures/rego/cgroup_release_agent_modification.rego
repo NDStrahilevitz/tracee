@@ -26,17 +26,17 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["security_file_open"]
 	},
 	{
 		"field": "security_file_open.container",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": [true]
 	},
 	{
 		"field": "security_file_open.args.pathname",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": ["*/release_agent"]
 	}
 ]

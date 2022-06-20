@@ -36,12 +36,12 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["security_file_open", "ptrace", "process_vm_writev"]
 	},
 	{
 		"field": "ptrace.args.request",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": ["PTRACE_POKETEXT"]
 	}
 ]

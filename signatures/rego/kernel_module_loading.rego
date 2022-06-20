@@ -32,12 +32,12 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["init_module", "security_kernel_read_file"]
 	},
 	{
 		"field": "security_kernel_read_file.args.type",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": ["kernel-module"]
 	},
 ]

@@ -26,19 +26,14 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["hooked_syscalls"]
 	},
 	{
 		#test for hooked_syscalls != [] so non empty
 		"field": "hooked_syscalls.args.hooked_syscalls",
-		"operator": 1,
+		"operator": helpers.filter_notequal,
 		"value": ["[]"]
-	},
-	{
-		"field": "execve.args.envp",
-		"operator": 0,
-		"value": ["*LD_PRELOAD*", "*LD_LIBRARY_PATH"]
 	},
 ]
 

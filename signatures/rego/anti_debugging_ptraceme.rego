@@ -1,5 +1,7 @@
 package tracee.TRC_2
 
+import data.tracee.helpers
+
 __rego_metadoc__ := {
 	"id": "TRC-2",
 	"version": "0.1.0",
@@ -22,12 +24,12 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["ptrace"]
 	},
 	{
 		"field": "ptrace.args.request",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": ["PTRACE_TRACEME"]
 	}
 ]

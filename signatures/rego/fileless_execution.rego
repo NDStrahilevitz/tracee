@@ -26,12 +26,12 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["sched_process_exec"]
 	},
 	{
 		"field": "sched_process_exec.args.pathname",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": ["memfd:*", "/dev/shm*", "/run/shm*"]
 	}
 ]

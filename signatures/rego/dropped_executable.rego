@@ -27,12 +27,12 @@ tracee_selected_events[eventSelector] {
 filters := [
 	{
 		"field": "event",
-		"operator": 0, #Equal
+		"operator": helpers.filter_equal,
 		"value": ["magic_write"]
 	},
 	{
 		"field": "magic_write.container",
-		"operator": 0,
+		"operator": helpers.filter_equal,
 		"value": [true]
 	},
 ]
