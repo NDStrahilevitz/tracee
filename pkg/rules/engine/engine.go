@@ -314,13 +314,22 @@ func (engine *Engine) GetFilters() ([]protocol.Filter, error) {
 	engine.signaturesMutex.RLock()
 	defer engine.signaturesMutex.RUnlock()
 	for sig := range engine.signatures {
+		metadata, _ := sig.GetMetadata()
+		selectors, err := sig.GetSelectedEvents()
+		if err != nil {
+			return []protocol.Filter{}, fmt.Errorf("error getting filters: missing selectors for base filters from signature %s", metadata.Name)
+		}
+		baseFilters := []protocol.Filter{}
+		for _, s := range selectors {
+			baseFilters = append(baseFilters, s.ToFilters()...)
+		}
+		if len(baseFilters) == 0 {
+			return []protocol.Filter{}, fmt.Errorf("error getting filters: missing base filters from signature %s", metadata.Name)
+		}
+		allFilters = append(allFilters, baseFilters...)
 		filters, err := sig.GetFilters()
 		if err != nil {
 			return []protocol.Filter{}, fmt.Errorf("error getting filters: %v", err)
-		}
-		if len(filters) == 0 {
-			metadata, _ := sig.GetMetadata()
-			return []protocol.Filter{}, fmt.Errorf("error getting filters: missing filter from signature %s", metadata.Name)
 		}
 		allFilters = append(allFilters, filters...)
 	}

@@ -44,11 +44,7 @@ func (sig *K8sApiConnection) GetSelectedEvents() ([]detect.SignatureEventSelecto
 }
 
 func (sig *K8sApiConnection) GetFilters() ([]protocol.Filter, error) {
-	return []protocol.Filter{
-		{Field: "execve.container", Operator: protocol.Equal, Value: []interface{}{true}},
-		{Field: "security_socket_connect.container", Operator: protocol.Equal, Value: []interface{}{true}},
-		{Field: "event", Operator: protocol.Equal, Value: []interface{}{"execve", "security_socket_connect"}},
-	}, nil
+	return []protocol.Filter{}, nil
 }
 
 func (sig *K8sApiConnection) OnEvent(event protocol.Event) error {

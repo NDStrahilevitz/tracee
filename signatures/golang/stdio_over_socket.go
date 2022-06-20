@@ -52,9 +52,7 @@ func (sig *stdioOverSocket) GetSelectedEvents() ([]detect.SignatureEventSelector
 }
 
 func (sig *stdioOverSocket) GetFilters() ([]protocol.Filter, error) {
-	return []protocol.Filter{
-		{Field: "event", Operator: protocol.Equal, Value: []interface{}{"security_socket_connect", "dup", "dup2", "dup3", "close", "sched_process_exec"}},
-	}, nil
+	return []protocol.Filter{}, nil
 }
 
 func (sig *stdioOverSocket) OnEvent(event protocol.Event) error {
