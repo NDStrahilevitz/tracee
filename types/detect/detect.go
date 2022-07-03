@@ -1,7 +1,9 @@
 // Package detect includes the "API" of the rule-engine and includes public facing types that consumers of the rule engine should work with
 package detect
 
-import "github.com/aquasecurity/tracee/types/protocol"
+import (
+	"github.com/aquasecurity/tracee/types/protocol"
+)
 
 // Signature is the basic unit of business logic for the rule-engine
 type Signature interface {
@@ -9,6 +11,8 @@ type Signature interface {
 	GetMetadata() (SignatureMetadata, error)
 	//GetSelectedEvents allows the signature to declare which events it subscribes to
 	GetSelectedEvents() ([]SignatureEventSelector, error)
+	//Filters declares required fields filterings from events consumed by the signature
+	GetFilters() ([]protocol.Filter, error)
 	//Init allows the signature to initialize its internal state
 	Init(cb SignatureHandler) error
 	//Close cleans the signature after Init operation
