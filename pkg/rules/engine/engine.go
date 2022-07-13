@@ -307,3 +307,77 @@ func (engine *Engine) GetSelectedEvents() []detect.SignatureEventSelector {
 	}
 	return res
 }
+
+// GetFilters returns a mediated array of all signature's filters
+func (engine *Engine) GetFilters() ([]protocol.Filter, error) {
+	allFilters := make([]protocol.Filter, 0)
+	engine.signaturesMutex.RLock()
+	defer engine.signaturesMutex.RUnlock()
+	for sig := range engine.signatures {
+		metadata, _ := sig.GetMetadata()
+		selectors, err := sig.GetSelectedEvents()
+		if err != nil {
+			return []protocol.Filter{}, fmt.Errorf("error getting filters: missing selectors for base filters from signature %s", metadata.Name)
+		}
+		baseFilters := []protocol.Filter{}
+		for _, s := range selectors {
+			baseFilters = append(baseFilters, s.ToFilters()...)
+		}
+		if len(baseFilters) == 0 {
+			return []protocol.Filter{}, fmt.Errorf("error getting filters: missing base filters from signature %s", metadata.Name)
+		}
+		allFilters = append(allFilters, baseFilters...)
+		filters, err := sig.GetFilters()
+		if err != nil {
+			return []protocol.Filter{}, fmt.Errorf("error getting filters: %v", err)
+		}
+		allFilters = append(allFilters, filters...)
+	}
+	res := mediateFilters(allFilters)
+	return res, nil
+}
+
+// mediateFilters performs mediation logics on a list of filters
+func mediateFilters(filters []protocol.Filter) []protocol.Filter {
+	type filterHeader struct {
+		field    string
+		operator protocol.FilterOperator
+	}
+	// remove := func(s []interface{}, i int) []interface{} {
+	// 	s[i] = s[len(s)-1]
+	// 	return s[:len(s)-1]
+	// }
+	filterGroups := make(map[filterHeader]*protocol.Filter)
+	// For now - mediation should be like a SQL GROUP BY clause, with no value duplications
+	for _, filter := range filters {
+		// Get the filter "header"
+		header := filterHeader{field: filter.Field, operator: filter.Operator}
+
+		// create the group if needed
+		if filterGroups[header] == nil {
+			filterGroups[header] = &protocol.Filter{
+				Field:    header.field,
+				Operator: header.operator,
+			}
+		}
+
+		// Append non existing filter values to the group
+		for _, filterVal := range filter.Value {
+			found := false
+			for _, fgVal := range filterGroups[header].Value {
+				if filterVal == fgVal {
+					found = true
+					break
+				}
+			}
+			if !found {
+				filterGroups[header].Value = append(filterGroups[header].Value, filterVal)
+			}
+		}
+	}
+	res := make([]protocol.Filter, 0)
+	for _, filter := range filterGroups {
+		res = append(res, *filter)
+	}
+	return res
+}

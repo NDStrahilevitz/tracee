@@ -33,6 +33,23 @@ tracee_selected_events[eventSelector] {
 	eventSelector := eventSelectors[_]
 }
 
+filters := [
+	{
+		"field": "event",
+		"operator": helpers.filter_equal,
+		"value": ["security_file_open", "ptrace", "process_vm_writev"]
+	},
+	{
+		"field": "ptrace.args.request",
+		"operator": helpers.filter_equal,
+		"value": ["PTRACE_POKETEXT"]
+	}
+]
+
+signature_filters[filter] {
+	filter := filters[_]
+}
+
 tracee_match {
 	input.eventName == "ptrace"
 	arg_value = helpers.get_tracee_argument("request")

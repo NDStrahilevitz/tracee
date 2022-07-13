@@ -43,6 +43,10 @@ func (sig *K8sApiConnection) GetSelectedEvents() ([]detect.SignatureEventSelecto
 	}, nil
 }
 
+func (sig *K8sApiConnection) GetFilters() ([]protocol.Filter, error) {
+	return []protocol.Filter{}, nil
+}
+
 func (sig *K8sApiConnection) OnEvent(event protocol.Event) error {
 	eventObj, ok := event.Payload.(trace.Event)
 

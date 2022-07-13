@@ -29,6 +29,23 @@ tracee_selected_events[eventSelector] {
 	eventSelector := eventSelectors[_]
 }
 
+filters := [
+	{
+		"field": "event",
+		"operator": helpers.filter_equal,
+		"value": ["init_module", "security_kernel_read_file"]
+	},
+	{
+		"field": "security_kernel_read_file.args.type",
+		"operator": helpers.filter_equal,
+		"value": ["kernel-module"]
+	},
+]
+
+signature_filters[filter] {
+	filter := filters[_]
+}
+
 tracee_match {
 	input.eventName == "init_module"
 }

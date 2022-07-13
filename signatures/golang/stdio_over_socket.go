@@ -51,6 +51,10 @@ func (sig *stdioOverSocket) GetSelectedEvents() ([]detect.SignatureEventSelector
 	}, nil
 }
 
+func (sig *stdioOverSocket) GetFilters() ([]protocol.Filter, error) {
+	return []protocol.Filter{}, nil
+}
+
 func (sig *stdioOverSocket) OnEvent(event protocol.Event) error {
 	eventObj, ok := event.Payload.(trace.Event)
 

@@ -24,6 +24,28 @@ tracee_selected_events[eventSelector] {
 	eventSelector := eventSelectors[_]
 }
 
+filters := [
+	{
+		"field": "event",
+		"operator": helpers.filter_equal,
+		"value": ["security_sb_mount"]
+	},
+	{
+		"field": "security_sb_mount.container",
+		"operator": helpers.filter_equal,
+		"value": [true]
+	},
+	{
+		"field": "security_sb_mount.args.dev_name",
+		"operator": helpers.filter_equal,
+		"value": ["/dev/*"]
+	}
+]
+
+signature_filters[filter] {
+	filter := filters[_]
+}
+
 tracee_match = res {
 	input.eventName == "security_sb_mount"
 
