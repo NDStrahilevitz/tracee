@@ -208,6 +208,8 @@ func main() {
 			// We buffer the error channel because we may want to publish errors before we start flusing this channel
 			cfg.ChanErrors = make(chan error, 10)
 
+			cfg.OnEventRecv = func() {}
+
 			t, err := tracee.New(cfg)
 			if err != nil {
 				return fmt.Errorf("error creating Tracee: %v", err)
