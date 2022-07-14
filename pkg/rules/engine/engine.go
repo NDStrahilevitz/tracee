@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/aquasecurity/tracee/pkg/rules/metrics"
@@ -334,6 +335,16 @@ func (engine *Engine) GetFilters() ([]protocol.Filter, error) {
 		allFilters = append(allFilters, filters...)
 	}
 	res := mediateFilters(allFilters)
+	// fix container and host filters to context
+	for i := range res {
+		field := res[i].Field
+		if strings.HasSuffix(field, ".container") && !strings.HasSuffix(field, ".context.container") {
+			res[i].Field = (strings.TrimSuffix(res[i].Field, ".container")) + ".context.container"
+		}
+		if strings.HasSuffix(field, ".host") && !strings.HasSuffix(field, ".context.host") {
+			res[i].Field = (strings.TrimSuffix(res[i].Field, ".host")) + ".context.host"
+		}
+	}
 	return res, nil
 }
 
