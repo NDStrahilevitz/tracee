@@ -175,9 +175,9 @@ func parseFilterString(filterStr string) (protocol.Filter, error) {
 	if valuesStr == "new" {
 		switch operator {
 		case protocol.Equal:
-			return protocol.EqualFilter(fmt.Sprintf("%s.new", filterName), true), nil
+			return protocol.EqualFilter(fmt.Sprintf("%s/new", filterName), true), nil
 		case protocol.NotEqual:
-			return protocol.NotEqualFilter(fmt.Sprintf("%s.new", filterName), true), nil
+			return protocol.NotEqualFilter(fmt.Sprintf("%s/new", filterName), true), nil
 		default:
 			return protocol.Filter{}, fmt.Errorf("invalid operator %s for \"new\" valued filter", operator.String())
 		}

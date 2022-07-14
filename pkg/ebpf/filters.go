@@ -147,7 +147,7 @@ func ParseProtocolFilters(filterRequests []protocol.Filter) (Filter, error) {
 			defer filter.ContFilter.Enable()
 
 			continue
-		case "container.new":
+		case "container/new":
 			err := filter.NewContFilter.Add(filterReq)
 			if err != nil {
 				return Filter{}, buildFilterError("new container", err)
@@ -174,7 +174,7 @@ func ParseProtocolFilters(filterRequests []protocol.Filter) (Filter, error) {
 			}
 			defer filter.PIDFilter.Enable()
 			continue
-		case "pid.new":
+		case "pid/new":
 			err := filter.NewPidFilter.Add(filterReq)
 			if err != nil {
 				return Filter{}, buildFilterError("new pid", err)
