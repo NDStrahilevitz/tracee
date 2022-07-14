@@ -143,6 +143,9 @@ func (filter *eventCtxFilter) Filter(evt trace.Event) bool {
 		return true
 	}
 
+	// TODO: optimize the order of filter calls
+	// if we order this by most to least likely filter to be set
+	// we can short circuit this logic.
 	return filter.timestampFilter.Filter(int64(evt.Timestamp)) &&
 		filter.cgroupIDFilter.Filter(uint64(evt.CgroupID)) &&
 		filter.containerFilter.Filter(evt.ContainerID != "") &&
@@ -201,12 +204,16 @@ func (f *eventCtxFilter) Add(req protocol.Filter) error {
 	case "processName", "comm":
 		filter := f.processNameFilter
 		return f.add(filter, req)
-	case "hostName", "host":
+	case "hostName":
 		filter := f.hostNameFilter
 		return f.add(filter, req)
 	case "cgroupId":
 		filter := f.cgroupIDFilter
 		return f.add(filter, req)
+	// we reserve host for negating "container" context requests
+	case "host":
+		filter := f.containerFilter
+		return f.add(filter, req.Not())
 	case "container":
 		filter := f.containerFilter
 		return f.add(filter, req)
