@@ -62,7 +62,7 @@ func IsValidFilterField(field string) bool {
 	}
 
 	switch field {
-	case "comm", "processName", "container", "container.new", "event", "set", "pid", "pid.new", "uts", "uid", "follow", "mntns", "pidns", "net":
+	case "comm", "processName", "container", "container/new", "event", "set", "pid", "pid/new", "uts", "uid", "follow", "mntns", "pidns", "net":
 		return true
 	}
 
