@@ -163,6 +163,7 @@ func (t *Tracee) decodeEvents(outerCtx gocontext.Context) (<-chan *trace.Event, 
 			}
 
 			if !t.shouldProcessEvent(&ctx, args) {
+				t.stats.EventsFiltered.Increment()
 				continue
 			}
 
@@ -216,6 +217,7 @@ func (t *Tracee) decodeEvents(outerCtx gocontext.Context) (<-chan *trace.Event, 
 			}
 
 			if !t.config.Filter.ContextFilter.Filter(evt) {
+				t.stats.EventsFiltered.Increment()
 				continue
 			}
 
