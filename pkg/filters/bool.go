@@ -110,7 +110,7 @@ func (f *BoolFilter) Enabled() bool {
 func (f *BoolFilter) FilterOut() bool {
 	// if only one is enabled then we filter values that are non-true or non-false, which means filtering out
 	if f.trueEnabled && !f.falseEnabled {
-		return true
+		return false
 	}
 	if !f.trueEnabled && f.falseEnabled {
 		return true

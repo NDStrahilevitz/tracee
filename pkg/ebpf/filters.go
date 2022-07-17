@@ -154,6 +154,14 @@ func ParseProtocolFilters(filterRequests []protocol.Filter) (Filter, error) {
 			}
 			defer filter.NewContFilter.Enable()
 
+			if filterReq.Operator == protocol.NotEqual {
+				err := filter.ContFilter.Add(protocol.EqualFilter("container", true))
+				if err != nil {
+					return Filter{}, buildFilterError("new container", err)
+				}
+				defer filter.ContFilter.Enable()
+			}
+
 			continue
 		case "event":
 			err := eventFilter.Add(filterReq)
