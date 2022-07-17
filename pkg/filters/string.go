@@ -7,6 +7,7 @@ import (
 	"unsafe"
 
 	bpf "github.com/aquasecurity/libbpfgo"
+	"github.com/aquasecurity/tracee/pkg/filters/sets"
 	"github.com/aquasecurity/tracee/types/protocol"
 )
 
@@ -14,11 +15,11 @@ import (
 type StringFilter struct {
 	equals     map[string]bool
 	notEquals  map[string]bool
-	prefixes   map[string]bool
-	suffixes   map[string]bool
+	prefixes   sets.PrefixSet
+	suffixes   sets.SuffixSet
 	contains   map[string]bool
-	nePrefixes map[string]bool
-	neSuffixes map[string]bool
+	nePrefixes sets.PrefixSet
+	neSuffixes sets.SuffixSet
 	neContains map[string]bool
 	enabled    bool
 	mutex      sync.RWMutex
@@ -26,13 +27,21 @@ type StringFilter struct {
 
 func NewStringFilter() *StringFilter {
 	return &StringFilter{
-		equals:     make(map[string]bool),
-		notEquals:  make(map[string]bool),
-		prefixes:   make(map[string]bool),
-		suffixes:   make(map[string]bool),
+		equals:    make(map[string]bool),
+		notEquals: make(map[string]bool),
+		prefixes: sets.PrefixSet{
+			Set: make(map[string]bool),
+		},
+		suffixes: sets.SuffixSet{
+			Set: make(map[string]bool),
+		},
+		neSuffixes: sets.SuffixSet{
+			Set: make(map[string]bool),
+		},
+		nePrefixes: sets.PrefixSet{
+			Set: make(map[string]bool),
+		},
 		contains:   make(map[string]bool),
-		neSuffixes: make(map[string]bool),
-		nePrefixes: make(map[string]bool),
 		neContains: make(map[string]bool),
 	}
 }
@@ -48,7 +57,7 @@ func (f *StringFilter) Filter(val string) bool {
 	neSuffixes := f.neSuffixes
 	nePrefixes := f.nePrefixes
 	neContains := f.neContains
-	notEqualsSet := len(f.notEquals) > 0 || len(neSuffixes) > 0 || len(nePrefixes) > 0
+	notEqualsSet := len(f.notEquals) > 0 || neSuffixes.Length() > 0 || nePrefixes.Length() > 0 || len(neContains) > 0
 	f.mutex.RUnlock()
 	if !enabled {
 		return true
@@ -56,34 +65,26 @@ func (f *StringFilter) Filter(val string) bool {
 	if equals {
 		return true
 	}
+	if suffixes.Filter(val) {
+		return true
+	}
+	if prefixes.Filter(val) {
+		return true
+	}
 	for contain := range contains {
 		if strings.Contains(val, contain) {
 			return true
 		}
 	}
-	for suffix := range suffixes {
-		if strings.HasSuffix(val, suffix) {
-			return true
-		}
-	}
-	for prefix := range prefixes {
-		if strings.HasPrefix(val, prefix) {
-			return true
-		}
-	}
 	if notEqualsSet {
+		if neSuffixes.Filter(val) {
+			return false
+		}
+		if nePrefixes.Filter(val) {
+			return false
+		}
 		for contain := range neContains {
 			if strings.Contains(val, contain) {
-				return false
-			}
-		}
-		for suffix := range neSuffixes {
-			if strings.HasSuffix(val, suffix) {
-				return false
-			}
-		}
-		for prefix := range nePrefixes {
-			if strings.HasPrefix(val, prefix) {
 				return false
 			}
 		}
@@ -137,11 +138,11 @@ func (f *StringFilter) addEqual(val string) {
 		return
 	}
 	if prefixSet {
-		f.prefixes[val[:len(val)-1]] = true
+		f.prefixes.Put(val[:len(val)-1])
 		return
 	}
 	if suffixSet && len(val) > 1 {
-		f.suffixes[val[1:]] = true
+		f.suffixes.Put(val[1:])
 		return
 	}
 	if !prefixSet && !suffixSet {
@@ -154,10 +155,10 @@ func (f *StringFilter) addNotEqual(val string) {
 	prefixSet := val[len(val)-1] == '*'
 	suffixSet := val[0] == '*'
 	if prefixSet {
-		f.nePrefixes[val[:len(val)-1]] = true
+		f.nePrefixes.Put(val[:len(val)-1])
 	}
 	if suffixSet {
-		f.neSuffixes[val[1:]] = true
+		f.neSuffixes.Put(val[1:])
 	}
 	if !prefixSet && !suffixSet {
 		f.notEquals[val] = true
@@ -198,11 +199,11 @@ func (f *StringFilter) Equals() []string {
 	for val := range f.equals {
 		res = append(res, val)
 	}
-	for val := range f.prefixes {
-		res = append(res, val)
+	for val := range f.prefixes.Set {
+		res = append(res, val+"*")
 	}
-	for val := range f.suffixes {
-		res = append(res, val)
+	for val := range f.suffixes.Set {
+		res = append(res, "*"+val)
 	}
 	return res
 }
@@ -213,11 +214,11 @@ func (f *StringFilter) NotEquals() []string {
 	for val := range f.notEquals {
 		res = append(res, val)
 	}
-	for val := range f.nePrefixes {
-		res = append(res, val)
+	for val := range f.nePrefixes.Set {
+		res = append(res, val+"*")
 	}
-	for val := range f.neSuffixes {
-		res = append(res, val)
+	for val := range f.neSuffixes.Set {
+		res = append(res, "*"+val)
 	}
 	return res
 }
