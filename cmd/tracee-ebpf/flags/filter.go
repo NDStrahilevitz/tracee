@@ -161,15 +161,12 @@ func PrepareFilter(filtersArr []string) (tracee.Filter, error) {
 
 		if strings.HasPrefix("container", filterName) {
 			if operatorAndValues == "=new" {
-				filter.NewContFilter.Enable()
-				filter.NewContFilter.Value = true
+				filter.NewContFilter.Parse("new")
 				continue
 			}
 			if operatorAndValues == "!=new" {
-				filter.ContFilter.Enable()
-				filter.ContFilter.Value = true
-				filter.NewContFilter.Enable()
-				filter.NewContFilter.Value = false
+				filter.ContFilter.Parse("true")
+				filter.NewContFilter.Parse("!new")
 				continue
 			}
 			err := filter.ContIDFilter.Parse(operatorAndValues)
@@ -221,13 +218,11 @@ func PrepareFilter(filtersArr []string) (tracee.Filter, error) {
 
 		if strings.HasPrefix("pid", filterName) {
 			if operatorAndValues == "=new" {
-				filter.NewPidFilter.Enable()
-				filter.NewPidFilter.Value = true
+				filter.NewPidFilter.Parse("new")
 				continue
 			}
 			if operatorAndValues == "!=new" {
-				filter.NewPidFilter.Enable()
-				filter.NewPidFilter.Value = false
+				filter.NewPidFilter.Parse("!new")
 				continue
 			}
 			err := filter.PIDFilter.Parse(operatorAndValues)
@@ -279,9 +274,9 @@ func PrepareFilter(filtersArr []string) (tracee.Filter, error) {
 
 func prepareEventsToTrace(eventFilter *filters.StringFilter, setFilter *filters.StringFilter, eventsNameToID map[string]events.ID) ([]events.ID, error) {
 	eventFilter.Enable()
-	eventsToTrace := eventFilter.Equal
-	excludeEvents := eventFilter.NotEqual
-	setsToTrace := setFilter.Equal
+	eventsToTrace := eventFilter.Equal()
+	excludeEvents := eventFilter.NotEqual()
+	setsToTrace := setFilter.Equal()
 
 	var res []events.ID
 	setsToEvents := make(map[string][]events.ID)
