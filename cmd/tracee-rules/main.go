@@ -25,6 +25,7 @@ import (
 const (
 	signatureBufferFlag       = "sig-buffer"
 	allowHighCapabilitiesFlag = "allow-high-capabilities"
+	listFilterFlag            = "list-filters"
 )
 
 func main() {
@@ -94,6 +95,21 @@ func main() {
 
 			if c.Bool("list-events") {
 				listEvents(os.Stdout, sigs)
+				return nil
+			}
+
+			if c.Bool(listFilterFlag) {
+				filters, err := engine.GetFilters(sigs)
+				if err != nil {
+					return fmt.Errorf("error getting engine filters: %w", err)
+				}
+
+				filterList := []string{}
+				for _, filter := range filters {
+					filterList = append(filterList, filterToExpression(filter))
+				}
+
+				fmt.Fprintln(os.Stdout, strings.Join(filterList, " "))
 				return nil
 			}
 
@@ -212,6 +228,10 @@ func main() {
 				Name:  "list-events",
 				Usage: "print a list of events that currently loaded signatures require",
 			},
+			&cli.BoolFlag{
+				Name:  listFilterFlag,
+				Usage: "print a list of filter given by currently loaded signatures",
+			},
 			&cli.UintFlag{
 				Name:  signatureBufferFlag,
 				Usage: "size of the event channel's buffer consumed by signatures",
@@ -276,6 +296,20 @@ func listEvents(w io.Writer, sigs []detect.Signature) {
 
 	sort.Slice(events, func(i, j int) bool { return events[i] < events[j] })
 	fmt.Fprintln(w, strings.Join(events, ","))
+}
+
+func filterToExpression(filter detect.Filter) string {
+	builder := strings.Builder{}
+	builder.WriteString("-t ")
+	builder.WriteString(filter.Field)
+	builder.WriteString(filter.Operator.String())
+	for i, val := range filter.Value {
+		builder.WriteString(fmt.Sprint(val))
+		if i != len(filter.Value)-1 {
+			builder.WriteRune(',')
+		}
+	}
+	return builder.String()
 }
 
 func sigHandler() chan bool {
