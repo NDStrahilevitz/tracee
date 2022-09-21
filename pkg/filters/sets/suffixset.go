@@ -1,31 +1,39 @@
 package sets
 
+import (
+	"math"
+	"sort"
+)
+
 type SuffixSet struct {
-	Set    map[string]bool
-	minLen int
-	maxLen int
+	Set       map[string]bool
+	lengthSet map[int]struct{}
+	lengths   []int
+	minLen    int
+}
+
+func NewSuffixSet() SuffixSet {
+	return SuffixSet{
+		Set:       map[string]bool{},
+		lengthSet: map[int]struct{}{},
+		lengths:   []int{},
+		minLen:    math.MaxInt,
+	}
 }
 
 func (set *SuffixSet) Put(suffix string) {
 	if suffix == "" {
 		return
 	}
-	initLenghts := false
 	suffixLength := len(suffix)
-	if len(set.Set) == 0 {
-		set.minLen = suffixLength
-		set.maxLen = suffixLength
-		initLenghts = true
-	}
 	set.Set[suffix] = true
-
-	if !initLenghts {
-		if suffixLength < set.minLen {
-			set.minLen = suffixLength
-		}
-		if suffixLength > set.maxLen {
-			set.maxLen = suffixLength
-		}
+	if _, ok := set.lengthSet[suffixLength]; !ok {
+		set.lengthSet[suffixLength] = struct{}{}
+		set.lengths = append(set.lengths, suffixLength)
+		sort.Ints(set.lengths)
+	}
+	if suffixLength < set.minLen {
+		set.minLen = suffixLength
 	}
 
 }
@@ -35,19 +43,14 @@ func (set *SuffixSet) Exists(suffix string) bool {
 }
 
 func (set *SuffixSet) Filter(val string) bool {
-	if set.minLen == 0 || set.maxLen == 0 {
-		return false
-	}
-
 	lenVal := len(val)
-
-	if lenVal < set.minLen {
+	if set.minLen == math.MaxInt || lenVal < set.minLen {
 		return false
 	}
 
-	for suffixLen := set.minLen; suffixLen <= set.maxLen; suffixLen++ {
+	for _, suffixLen := range set.lengths {
 		if lenVal < suffixLen {
-			return false
+			continue
 		}
 
 		check := val[lenVal-suffixLen : lenVal]

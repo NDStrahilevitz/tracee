@@ -22,9 +22,7 @@ func RandStringRunes(n int, prefixes []string) string {
 }
 
 func Test_PrefixSet(t *testing.T) {
-	prefixes := sets.PrefixSet{
-		Set: map[string]bool{},
-	}
+	prefixes := sets.NewPrefixSet()
 	put := []string{
 		"bruh",
 		"ahi",
@@ -53,9 +51,7 @@ func Test_PrefixSet(t *testing.T) {
 }
 
 func Test_SuffixSet(t *testing.T) {
-	suffixes := sets.SuffixSet{
-		Set: map[string]bool{},
-	}
+	suffixes := sets.NewSuffixSet()
 	put := []string{
 		"bruh",
 		"ahi",

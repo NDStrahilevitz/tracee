@@ -22,20 +22,12 @@ type StringFilter struct {
 
 func NewStringFilter() *StringFilter {
 	return &StringFilter{
-		equal:    map[string]bool{},
-		notEqual: map[string]bool{},
-		prefixes: sets.PrefixSet{
-			Set: map[string]bool{},
-		},
-		suffixes: sets.SuffixSet{
-			Set: map[string]bool{},
-		},
-		notSuffixes: sets.SuffixSet{
-			Set: map[string]bool{},
-		},
-		notPrefixes: sets.PrefixSet{
-			Set: map[string]bool{},
-		},
+		equal:       map[string]bool{},
+		notEqual:    map[string]bool{},
+		prefixes:    sets.NewPrefixSet(),
+		suffixes:    sets.NewSuffixSet(),
+		notPrefixes: sets.NewPrefixSet(),
+		notSuffixes: sets.NewSuffixSet(),
 		contains:    map[string]bool{},
 		notContains: map[string]bool{},
 	}

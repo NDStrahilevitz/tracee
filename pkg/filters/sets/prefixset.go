@@ -1,33 +1,41 @@
 package sets
 
+import (
+	"math"
+	"sort"
+)
+
 type PrefixSet struct {
-	Set    map[string]bool
-	minLen int
-	maxLen int
+	Set       map[string]bool
+	lengthSet map[int]struct{}
+	lengths   []int
+	minLen    int
+}
+
+func NewPrefixSet() PrefixSet {
+	return PrefixSet{
+		Set:       map[string]bool{},
+		lengthSet: map[int]struct{}{},
+		lengths:   []int{},
+		minLen:    math.MaxInt,
+	}
 }
 
 func (set *PrefixSet) Put(prefix string) {
 	if prefix == "" {
 		return
 	}
-	initLenghts := false
-	prefixLength := len(prefix)
-	if len(set.Set) == 0 {
-		set.minLen = prefixLength
-		set.maxLen = prefixLength
-		initLenghts = true
-	}
+
 	set.Set[prefix] = true
-
-	if !initLenghts {
-		if prefixLength < set.minLen {
-			set.minLen = prefixLength
-		}
-		if prefixLength > set.maxLen {
-			set.maxLen = prefixLength
-		}
+	prefixLen := len(prefix)
+	if _, ok := set.lengthSet[prefixLen]; !ok {
+		set.lengthSet[prefixLen] = struct{}{}
+		set.lengths = append(set.lengths, prefixLen)
+		sort.Ints(set.lengths)
 	}
-
+	if prefixLen < set.minLen {
+		set.minLen = prefixLen
+	}
 }
 
 func (set *PrefixSet) Exists(prefix string) bool {
@@ -35,16 +43,14 @@ func (set *PrefixSet) Exists(prefix string) bool {
 }
 
 func (set *PrefixSet) Filter(val string) bool {
-	if set.minLen == 0 || set.maxLen == 0 {
-		return false
-	}
-	if len(val) < set.minLen {
+	valLen := len(val)
+	if set.minLen == math.MaxInt || valLen < set.minLen {
 		return false
 	}
 
-	for prefixLen := set.minLen; prefixLen <= set.maxLen; prefixLen++ {
-		if len(val) < prefixLen {
-			return false
+	for _, prefixLen := range set.lengths {
+		if valLen < prefixLen {
+			continue
 		}
 
 		check := val[0:prefixLen]
