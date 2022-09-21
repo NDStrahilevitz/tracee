@@ -82,19 +82,42 @@ var filterVals = []string{
 	"/etc/sudoers.d/*", "/private/etc/sudoers.d/*", "/sys/kernel/debug/kprobes/enabled", "*secrets/kubernetes.io/serviceaccount*", "*config", "*mem",
 }
 
-func BenchmarkStringFilter(b *testing.B) {
+func BenchmarkStringFilter10(b *testing.B) {
+	benchmarkStringFilter(b, 10)
+}
+
+func BenchmarkStringFilter50(b *testing.B) {
+	benchmarkStringFilter(b, 50)
+}
+
+func BenchmarkStringFilter100(b *testing.B) {
+	benchmarkStringFilter(b, 100)
+}
+
+func BenchmarkMatchFilter10(b *testing.B) {
+	benchmarkMatchFilter(b, 10)
+}
+
+func BenchmarkMatchFilter50(b *testing.B) {
+	benchmarkMatchFilter(b, 50)
+}
+func BenchmarkMatchFilter100(b *testing.B) {
+	benchmarkMatchFilter(b, 100)
+}
+
+func benchmarkStringFilter(b *testing.B, len int) {
 	filter := filters.NewStringFilter()
 	err := filter.Parse(fmt.Sprintf("=%s", strings.Join(filterVals, ",")))
 	require.NoError(b, err)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		filter.Filter(randStringRunes(6, filterVals))
+		filter.Filter(randStringRunes(len, filterVals))
 	}
 }
 
-func BenchmarkMatchFilter(b *testing.B) {
+func benchmarkMatchFilter(b *testing.B, len int) {
 	for n := 0; n < b.N; n++ {
-		matchFilter(filterVals, randStringRunes(6, filterVals))
+		matchFilter(filterVals, randStringRunes(len, filterVals))
 	}
 }
