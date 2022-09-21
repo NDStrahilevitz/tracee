@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/aquasecurity/tracee/pkg/rules/metrics"
@@ -358,7 +359,9 @@ func selectorToFilter(selector detect.SignatureEventSelector) []detect.Filter {
 	eventFilter := detect.EqualFilter("event", []interface{}{selector.Name})
 	res := []detect.Filter{eventFilter}
 	if selector.Origin != "" && selector.Origin != "*" {
-		originFilter := detect.EqualFilter(fmt.Sprintf("%s.context.%s", selector.Name, selector.Origin), []interface{}{true})
+		origin := selector.Origin
+		origin = strings.TrimSuffix(origin, "-init")
+		originFilter := detect.EqualFilter(fmt.Sprintf("%s.context.%s", selector.Name, origin), []interface{}{true})
 		res = append(res, originFilter)
 	}
 	return res

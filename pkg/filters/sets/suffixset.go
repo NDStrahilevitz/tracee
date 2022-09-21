@@ -50,7 +50,7 @@ func (set *SuffixSet) Filter(val string) bool {
 
 	for _, suffixLen := range set.lengths {
 		if lenVal < suffixLen {
-			continue
+			return false
 		}
 
 		check := val[lenVal-suffixLen : lenVal]

@@ -50,7 +50,7 @@ func (set *PrefixSet) Filter(val string) bool {
 
 	for _, prefixLen := range set.lengths {
 		if valLen < prefixLen {
-			continue
+			return false
 		}
 
 		check := val[0:prefixLen]
