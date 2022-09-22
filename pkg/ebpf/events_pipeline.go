@@ -163,6 +163,11 @@ func (t *Tracee) decodeEvents(outerCtx context.Context) (<-chan *trace.Event, <-
 				args = append(args, trace.Argument{ArgMeta: argMeta, Value: argVal})
 			}
 
+			if !t.shouldProcessEvent(&ctx, args) {
+				t.stats.EventsFilteredCount.Increment()
+				continue
+			}
+
 			// Add stack trace if needed
 			var StackAddresses []uint64
 			if t.config.Output.StackAddresses {
@@ -214,10 +219,6 @@ func (t *Tracee) decodeEvents(outerCtx context.Context) (<-chan *trace.Event, <-
 			}
 
 			if !t.config.Filter.ContextFilter.Filter(evt) {
-				t.stats.EventsFilteredCount.Increment()
-				continue
-			}
-			if !t.shouldProcessEvent(&ctx, args) {
 				t.stats.EventsFilteredCount.Increment()
 				continue
 			}
