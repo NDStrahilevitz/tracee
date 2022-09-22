@@ -258,6 +258,17 @@ func TestStringFilter(t *testing.T) {
 			expected: []bool{true, true, false, true, true, false, true, true, false, true, false},
 		},
 		{
+			name: "real  example - security_bprm_check",
+			expressions: []string{
+				"=mysqld*,postgres*,sqlplus*,couchdb*,memcached*,redis-server*,rabbitmq-server*,mongod*,runc:[2:INIT],nginx*,httpd*,httpd-foregroun*,http-nio*,lighttpd*,apache*,apache2*,runc:*",
+				"!=runc*,containerd*,(kubelet)",
+			},
+			vals: []string{
+				"reality", "can", "be", "whatever", "i", "want", "containerd-nothis", "(kubelet)", "runc:[2:INIT]", "runc-else",
+			},
+			expected: []bool{true, true, true, true, true, true, false, false, true, false},
+		},
+		{
 			name: "error - unsupported operator Greater",
 			expressions: []string{
 				">*/release_agent,/etc/kubernetes/pki/*,*secrets/kubernetes.io/serviceaccount*,*token,/etc/ld.so.preload",
