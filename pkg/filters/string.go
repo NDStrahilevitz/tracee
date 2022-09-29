@@ -8,6 +8,14 @@ import (
 	"github.com/aquasecurity/tracee/pkg/filters/sets"
 )
 
+// func init() {
+// 	filter := NewStringFilter()
+// 	filter.Parse("=hello")
+// 	filter.FilterIface("bruh")
+// 	filter.FilterIface("hello")
+// 	filter.FilterIface(1)
+// }
+
 type StringFilter struct {
 	equal       map[string]bool
 	notEqual    map[string]bool
@@ -33,11 +41,19 @@ func NewStringFilter() *StringFilter {
 	}
 }
 
+func (f *StringFilter) Filter(val interface{}) bool {
+	valStr, ok := val.(string)
+	if !ok {
+		return false
+	}
+	return f.filter(valStr)
+}
+
 // priority goes by (from most significant):
 // 1. equality, suffixed, prefixed, contains
 // 2. not equals, not suffixed, not prefixed, not contains
 // This is done so if a conflicting "not" filter exists, we ignore it
-func (f *StringFilter) Filter(val string) bool {
+func (f *StringFilter) filter(val string) bool {
 	enabled := f.enabled
 	equals := f.equal[val]
 	notEquals := f.notEqual[val]

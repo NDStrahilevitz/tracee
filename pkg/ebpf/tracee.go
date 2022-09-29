@@ -30,6 +30,7 @@ import (
 	"github.com/aquasecurity/tracee/pkg/events/queue"
 	"github.com/aquasecurity/tracee/pkg/events/sorting"
 	"github.com/aquasecurity/tracee/pkg/events/trigger"
+	"github.com/aquasecurity/tracee/pkg/filters"
 	"github.com/aquasecurity/tracee/pkg/metrics"
 	"github.com/aquasecurity/tracee/pkg/procinfo"
 	"github.com/aquasecurity/tracee/pkg/utils"
@@ -504,13 +505,18 @@ func (t *Tracee) initDerivationTable() error {
 	pathResolver := containers.InitPathResolver(&t.pidsInMntns)
 	soLoader := sharedobjs.InitContainersSymbolsLoader(&pathResolver, 1024)
 
-	symbolsLoadedFilter := t.config.Filter.ArgFilter.GetEventFilters(events.SymbolsLoaded)
+	symbolsLoadedFilters := t.config.Filter.ArgFilter.GetEventFilters(events.SymbolsLoaded)
 	watchedSymbols := []string{}
 	whitelistedLibs := []string{}
 
-	if symbolsLoadedFilter != nil {
-		watchedSymbols = symbolsLoadedFilter["symbols"].Equal()
-		whitelistedLibs = symbolsLoadedFilter["library_path"].NotEqual()
+	if symbolsLoadedFilters != nil {
+		watchedSymbolsFilter, ok1 := symbolsLoadedFilters["symbols"].(*filters.StringFilter)
+		whitelistLibsFilter, ok2 := symbolsLoadedFilters["library_path"].(*filters.StringFilter)
+		if !ok1 || !ok2 {
+			return fmt.Errorf("invalid symbols_loaded filters")
+		}
+		watchedSymbols = watchedSymbolsFilter.Equal()
+		whitelistedLibs = whitelistLibsFilter.NotEqual()
 	}
 
 	t.eventDerivations = derive.Table{

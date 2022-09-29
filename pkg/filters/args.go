@@ -8,30 +8,21 @@ import (
 	"github.com/aquasecurity/tracee/types/trace"
 )
 
-type eventArgFilter struct {
-	StringFilter
-}
 type ArgFilter struct {
-	filters map[events.ID]map[string]*eventArgFilter // key to the first map is event id, and to the second map the argument name
+	filters map[events.ID]map[string]Filter
 	enabled bool
-}
-
-func newEventArgFilter() *eventArgFilter {
-	return &eventArgFilter{
-		StringFilter: *NewStringFilter(),
-	}
 }
 
 func NewArgFilter() *ArgFilter {
 	return &ArgFilter{
-		filters: map[events.ID]map[string]*eventArgFilter{},
+		filters: map[events.ID]map[string]Filter{},
 		enabled: false,
 	}
 }
 
 // GetEventFilters returns the argument filters map for a specific event
 // writing to the map may have unintentional consenquences, avoid doing so
-func (filter *ArgFilter) GetEventFilters(eventID events.ID) map[string]*eventArgFilter {
+func (filter *ArgFilter) GetEventFilters(eventID events.ID) map[string]Filter {
 	return filter.filters[eventID]
 }
 
@@ -54,12 +45,15 @@ func (filter *ArgFilter) Filter(eventID events.ID, args []trace.Argument) bool {
 			return true
 		}
 		// TODO: use type assertion instead of string conversion
-		argValStr := fmt.Sprint(argVal)
-		res := filter.Filter(argValStr)
+		if argName != "syscall" {
+			argVal = fmt.Sprint(argVal)
+		}
+		res := filter.Filter(argVal)
 		if !res {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -101,13 +95,29 @@ func (filter *ArgFilter) Parse(filterName string, operatorAndValues string, even
 		return InvalidEventArgument(argName)
 	}
 
+	var err error
+	if argName == "syscall" {
+		err = filter.parseSyscallFilter(id, operatorAndValues)
+	} else {
+		err = filter.parseFilter(id, argName, operatorAndValues)
+	}
+	if err != nil {
+		return err
+	}
+
+	filter.Enable()
+
+	return nil
+}
+
+func (filter *ArgFilter) parseFilter(id events.ID, argName string, operatorAndValues string) error {
 	if _, ok := filter.filters[id]; !ok {
-		filter.filters[id] = map[string]*eventArgFilter{}
+		filter.filters[id] = map[string]Filter{}
 	}
 
 	if _, ok := filter.filters[id][argName]; !ok {
 		// store new event arg filter if missing
-		argFilter := newEventArgFilter()
+		argFilter := NewStringFilter()
 		filter.filters[id][argName] = argFilter
 	}
 
@@ -121,8 +131,48 @@ func (filter *ArgFilter) Parse(filterName string, operatorAndValues string, even
 	// store the arg filter again
 	filter.filters[id][argName] = argFilter
 
-	filter.Enable()
+	return nil
+}
 
+func (filter *ArgFilter) parseSyscallFilter(id events.ID, operatorAndValues string) error {
+	if len(operatorAndValues) < 2 {
+		return InvalidExpression(operatorAndValues)
+	}
+	valuesString := string(operatorAndValues[1:])
+	operatorString := string(operatorAndValues[0])
+
+	if operatorString == "!" {
+		if len(operatorAndValues) < 3 {
+			return InvalidExpression(operatorAndValues)
+		}
+		operatorString = operatorAndValues[0:2]
+		valuesString = operatorAndValues[2:]
+	}
+
+	syscalls := strings.Split(valuesString, ",")
+
+	if _, ok := filter.filters[id]; !ok {
+		filter.filters[id] = map[string]Filter{}
+	}
+
+	if _, ok := filter.filters[id]["syscall"]; !ok {
+		// store new event arg filter if missing
+		argFilter := NewInt32Filter()
+		filter.filters[id]["syscall"] = argFilter
+	}
+
+	syscallFilter := filter.filters[id]["syscall"]
+	for _, syscall := range syscalls {
+		id, ok := events.Definitions.GetID(syscall)
+		if !ok {
+			return InvalidValue(syscall)
+		}
+		def := events.Definitions.Get(id)
+		if !def.Syscall {
+			return InvalidValue(syscall)
+		}
+		syscallFilter.Parse(fmt.Sprintf("%s%d", operatorString, id))
+	}
 	return nil
 }
 
