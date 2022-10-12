@@ -46,7 +46,7 @@ func TestStdioOverSocket(t *testing.T) {
 							ArgMeta: trace.ArgMeta{
 								Name: "remote_addr",
 							},
-							Value: map[string]string{"sa_family": "AF_INET", "sin_port": "53", "sin_addr": "10.225.0.2"},
+							Value: &trace.SockAddrInet{Port_: 53, Ip: "10.225.0.2"},
 						},
 					},
 				},
@@ -74,7 +74,7 @@ func TestStdioOverSocket(t *testing.T) {
 					Data: map[string]interface{}{
 						"fd":   0,
 						"ip":   "10.225.0.2",
-						"port": "53",
+						"port": 53,
 					},
 					SigMetadata: md,
 					Event: trace.Event{
@@ -115,7 +115,7 @@ func TestStdioOverSocket(t *testing.T) {
 							ArgMeta: trace.ArgMeta{
 								Name: "remote_addr",
 							},
-							Value: map[string]string{"sa_family": "AF_INET", "sin_port": "53", "sin_addr": "10.225.0.2"},
+							Value: &trace.SockAddrInet{Port_: 53, Ip: "10.225.0.2"},
 						},
 					},
 				},
@@ -143,7 +143,7 @@ func TestStdioOverSocket(t *testing.T) {
 					Data: map[string]interface{}{
 						"fd":   0,
 						"ip":   "10.225.0.2",
-						"port": "53",
+						"port": 53,
 					},
 					SigMetadata: md,
 					Event: trace.Event{
@@ -184,7 +184,7 @@ func TestStdioOverSocket(t *testing.T) {
 							ArgMeta: trace.ArgMeta{
 								Name: "remote_addr",
 							},
-							Value: map[string]string{"sa_family": "AF_INET", "sin_port": "53", "sin_addr": "10.225.0.2"},
+							Value: &trace.SockAddrInet{Port_: 53, Ip: "10.225.0.2"},
 						},
 					},
 				},
@@ -207,7 +207,7 @@ func TestStdioOverSocket(t *testing.T) {
 					Data: map[string]interface{}{
 						"fd":   1,
 						"ip":   "10.225.0.2",
-						"port": "53",
+						"port": 53,
 					},
 					Event: trace.Event{
 						ProcessID:   45,
@@ -243,7 +243,7 @@ func TestStdioOverSocket(t *testing.T) {
 							ArgMeta: trace.ArgMeta{
 								Name: "remote_addr",
 							},
-							Value: map[string]string{"sa_family": "AF_INET", "sin_port": "53", "sin_addr": "10.225.0.2"},
+							Value: &trace.SockAddrInet{Port_: 53, Ip: "10.225.0.2"},
 						},
 					},
 				},
@@ -277,7 +277,7 @@ func TestStdioOverSocket(t *testing.T) {
 					Data: map[string]interface{}{
 						"fd":   0,
 						"ip":   "10.225.0.2",
-						"port": "53",
+						"port": 53,
 					},
 					Event: trace.Event{
 						ProcessID: 45,
@@ -348,7 +348,7 @@ func TestStdioOverSocket(t *testing.T) {
 							ArgMeta: trace.ArgMeta{
 								Name: "remote_addr",
 							},
-							Value: map[string]string{"sa_family": "AF_INET", "sin_port": "53", "sin_addr": "10.225.0.2"},
+							Value: &trace.SockAddrInet{Port_: 53, Ip: "10.225.0.2"},
 						},
 					},
 				},
@@ -402,7 +402,7 @@ func TestStdioOverSocket(t *testing.T) {
 							ArgMeta: trace.ArgMeta{
 								Name: "remote_addr",
 							},
-							Value: map[string]string{"sa_family": "AF_INET", "sin_port": "53", "sin_addr": "10.225.0.2"},
+							Value: &trace.SockAddrInet{Port_: 53, Ip: "10.225.0.2"},
 						},
 					},
 				},
@@ -444,7 +444,7 @@ func TestStdioOverSocket(t *testing.T) {
 							ArgMeta: trace.ArgMeta{
 								Name: "remote_addr",
 							},
-							Value: map[string]string{"sa_family": "AF_INET6", "sin6_port": "443", "sin6_addr": "2001:67c:1360:8001::2f", "sin6_scopeid": "0", "sin6_flowinfo": "0"},
+							Value: &trace.SockAddrInet6{Port_: 443, Ip: "2001:67c:1360:8001::2f", ScopeID: 0, FlowInfo: 0},
 						},
 					},
 				},
@@ -472,7 +472,7 @@ func TestStdioOverSocket(t *testing.T) {
 					Data: map[string]interface{}{
 						"fd":   0,
 						"ip":   "2001:67c:1360:8001::2f",
-						"port": "443",
+						"port": 443,
 					},
 					Event: trace.Event{
 						ProcessID: 45,

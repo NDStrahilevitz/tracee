@@ -82,12 +82,16 @@ func (sig *K8sApiConnection) OnEvent(event protocol.Event) error {
 		if err != nil {
 			return err
 		}
-		ip, err := getIPFromAddr(remoteAddrArg)
-		if err != nil || ip == "" {
-			return err
+		sockAddr, ok := remoteAddrArg.Value.(trace.SockAddr)
+		if !ok {
+			return fmt.Errorf("failed to extract trace.SockAddr argument")
 		}
 
-		if ip == apiAddress {
+		if sockAddr.Address() == "" {
+			return fmt.Errorf("missing address in remote_addr")
+		}
+
+		if sockAddr.Address() == apiAddress {
 			m, _ := sig.GetMetadata()
 			sig.cb(detect.Finding{
 				SigMetadata: m,
@@ -115,20 +119,4 @@ func getApiAddressFromEnvs(envs []string) string {
 		}
 	}
 	return ""
-}
-
-func getIPFromAddr(addrArg trace.Argument) (string, error) {
-
-	addr, isOk := addrArg.Value.(map[string]string)
-	if !isOk {
-		return "", fmt.Errorf("couldn't convert arg to addr")
-	}
-
-	if addr["sa_family"] == "AF_INET" {
-		return addr["sin_addr"], nil
-	} else if addr["sa_family"] == "AF_INET6" {
-		return addr["sin6_addr"], nil
-	}
-
-	return "", nil
 }

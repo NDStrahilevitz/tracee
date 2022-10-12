@@ -327,3 +327,17 @@ func TestStringFilter(t *testing.T) {
 		})
 	}
 }
+
+// func TestStringMapFilter(t *testing.T) {
+// 	testCases := []struct {
+// 		name        string
+// 		expressions []string
+// 		vals        []map[string]string
+// 		expected    []bool
+// 	}{
+// 		{
+// 			name: "basic",
+// 			expressions: []string{`{"port`},
+// 		},
+// 	}
+// }
