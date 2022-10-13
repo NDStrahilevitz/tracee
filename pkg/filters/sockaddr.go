@@ -2,6 +2,7 @@ package filters
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/aquasecurity/tracee/types/trace"
@@ -26,12 +27,16 @@ func NewSockAddrFilter() *SockAddrFilter {
 	}
 }
 
-// priority goes by (from most significant):
-// 1. equality, suffixed, prefixed, contains
-// 2. not equals, not suffixed, not prefixed, not contains
-// This is done so if a conflicting "not" filter exists, we ignore it
-func (f *SockAddrFilter) Filter(val trace.SockAddr) bool {
-	if f.enabled {
+func (f *SockAddrFilter) Filter(val interface{}) bool {
+	filterable, ok := val.(trace.SockAddr)
+	if !ok {
+		return false
+	}
+	return f.filter(filterable)
+}
+
+func (f *SockAddrFilter) filter(val trace.SockAddr) bool {
+	if !f.enabled {
 		return true
 	}
 	for equal := range f.equal {
@@ -74,9 +79,14 @@ func (f *SockAddrFilter) Parse(operatorAndValues string) error {
 		if i != len(values)-1 {
 			val += "}"
 		}
+		val = strings.TrimSpace(val)
 		unmarshaled := sockAddrFilterValue{}
-		json.Unmarshal([]byte(val), &unmarshaled)
-		err := f.add(unmarshaled, stringToOperator(operatorString))
+		fmt.Println("val is:", val)
+		err := json.Unmarshal([]byte(val), &unmarshaled)
+		if err != nil {
+			return err
+		}
+		err = f.add(unmarshaled, stringToOperator(operatorString))
 		if err != nil {
 			return err
 		}

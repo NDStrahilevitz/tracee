@@ -34,10 +34,12 @@ func (filter *ArgFilter) Filter(eventID events.ID, args []trace.Argument) bool {
 	for argName, filter := range filter.filters[eventID] {
 		found := false
 		var argVal interface{}
+		var argType string
 		for _, arg := range args {
 			if arg.Name == argName {
 				found = true
 				argVal = arg.Value
+				argType = arg.Type
 				break
 			}
 		}
@@ -45,7 +47,7 @@ func (filter *ArgFilter) Filter(eventID events.ID, args []trace.Argument) bool {
 			return true
 		}
 		// TODO: use type assertion instead of string conversion
-		if argName != "syscall" {
+		if argName != "syscall" && argType != "struct sockaddr*" {
 			argVal = fmt.Sprint(argVal)
 		}
 		res := filter.Filter(argVal)
@@ -84,9 +86,11 @@ func (filter *ArgFilter) Parse(filterName string, operatorAndValues string, even
 
 	// check if argument name exists for this event
 	argFound := false
+	argType := ""
 	for i := range eventParams {
 		if eventParams[i].Name == argName {
 			argFound = true
+			argType = eventParams[i].Type
 			break
 		}
 	}
@@ -98,8 +102,14 @@ func (filter *ArgFilter) Parse(filterName string, operatorAndValues string, even
 	var err error
 	if argName == "syscall" {
 		err = filter.parseSyscallFilter(id, operatorAndValues)
+	} else if argType == "struct sockaddr*" {
+		err = filter.parseFilter(id, argName, operatorAndValues, func() Filter {
+			return NewSockAddrFilter()
+		})
 	} else {
-		err = filter.parseFilter(id, argName, operatorAndValues)
+		err = filter.parseFilter(id, argName, operatorAndValues, func() Filter {
+			return NewStringFilter()
+		})
 	}
 	if err != nil {
 		return err
@@ -110,14 +120,14 @@ func (filter *ArgFilter) Parse(filterName string, operatorAndValues string, even
 	return nil
 }
 
-func (filter *ArgFilter) parseFilter(id events.ID, argName string, operatorAndValues string) error {
+func (filter *ArgFilter) parseFilter(id events.ID, argName string, operatorAndValues string, filterConstructor func() Filter) error {
 	if _, ok := filter.filters[id]; !ok {
 		filter.filters[id] = map[string]Filter{}
 	}
 
 	if _, ok := filter.filters[id][argName]; !ok {
 		// store new event arg filter if missing
-		argFilter := NewStringFilter()
+		argFilter := filterConstructor()
 		filter.filters[id][argName] = argFilter
 	}
 
