@@ -1197,8 +1197,8 @@ func (t *Tracee) initBPF() error {
 
 		// Initialize perf buffers
 
-		t.eventsChannel = make(chan []byte, 1000)
-		t.lostEvChannel = make(chan uint64)
+		t.eventsChannel = make(chan []byte, 10000)
+		t.lostEvChannel = make(chan uint64, 10)
 		t.eventsPerfMap, err = t.bpfModule.InitPerfBuf(
 			"events",
 			t.eventsChannel,
@@ -1209,8 +1209,8 @@ func (t *Tracee) initBPF() error {
 			return fmt.Errorf("error initializing events perf map: %v", err)
 		}
 
-		t.fileWrChannel = make(chan []byte, 1000)
-		t.lostWrChannel = make(chan uint64)
+		t.fileWrChannel = make(chan []byte, 10000)
+		t.lostWrChannel = make(chan uint64, 10)
 		t.fileWrPerfMap, err = t.bpfModule.InitPerfBuf(
 			"file_writes",
 			t.fileWrChannel,
@@ -1221,8 +1221,8 @@ func (t *Tracee) initBPF() error {
 			return fmt.Errorf("error initializing file_writes perf map: %v", err)
 		}
 
-		t.netChannel = make(chan []byte, 1000)
-		t.lostNetChannel = make(chan uint64)
+		t.netChannel = make(chan []byte, 10000)
+		t.lostNetChannel = make(chan uint64, 10)
 		t.netPerfMap, err = t.bpfModule.InitPerfBuf(
 			"net_events",
 			t.netChannel,

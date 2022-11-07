@@ -182,7 +182,7 @@ func main() {
 				return fmt.Errorf("failed preparing BPF object: %w", err)
 			}
 
-			cfg.ChanEvents = make(chan trace.Event, 1000)
+			cfg.ChanEvents = make(chan trace.Event, 10000)
 			cfg.ChanErrors = make(chan error, 10) // buffer to allow next errors without blocking
 
 			// Create Tracee Singleton

@@ -12,6 +12,7 @@ import (
 	"github.com/aquasecurity/tracee/pkg/bufferdecoder"
 	"github.com/aquasecurity/tracee/pkg/events"
 	"github.com/aquasecurity/tracee/pkg/events/derive"
+	"github.com/aquasecurity/tracee/pkg/pipeline"
 	"github.com/aquasecurity/tracee/types/trace"
 )
 
@@ -27,15 +28,15 @@ func (t *Tracee) handleEvents(ctx context.Context) {
 	eventsChan, errc := t.decodeEvents(ctx)
 	errcList = append(errcList, errc)
 
-	if t.config.Cache != nil {
-		eventsChan, errc = t.queueEvents(ctx, eventsChan)
-		errcList = append(errcList, errc)
-	}
+	// if t.config.Cache != nil {
+	// 	eventsChan, errc = t.queueEvents(ctx, eventsChan)
+	// 	errcList = append(errcList, errc)
+	// }
 
-	if t.config.Output.EventsSorting {
-		eventsChan, errc = t.eventsSorter.StartPipeline(ctx, eventsChan)
-		errcList = append(errcList, errc)
-	}
+	// if t.config.Output.EventsSorting {
+	// 	eventsChan, errc = t.eventsSorter.StartPipeline(ctx, eventsChan)
+	// 	errcList = append(errcList, errc)
+	// }
 
 	// Process events stage
 	// in this stage we perform event specific logic
@@ -47,10 +48,10 @@ func (t *Tracee) handleEvents(ctx context.Context) {
 	// Events may be enriched in the initial decode state if the enrichment data has been stored in the Containers structure
 	// In that case, this pipeline stage will be quickly skipped
 	// This is done in a separate stage to ensure enrichment is non blocking (since container runtime calls may timeout and block the pipeline otherwise)
-	if t.config.ContainersEnrich {
-		eventsChan, errc = t.enrichContainerEvents(ctx, eventsChan)
-		errcList = append(errcList, errc)
-	}
+	// if t.config.ContainersEnrich {
+	// 	eventsChan, errc = t.enrichContainerEvents(ctx, eventsChan)
+	// 	errcList = append(errcList, errc)
+	// }
 
 	// Derive events stage
 	// In this stage events go through a derivation function
@@ -88,8 +89,8 @@ func (t *Tracee) handleEvents(ctx context.Context) {
 // 3) create an internal, to tracee-ebpf, buffer based on the node size.
 
 // queueEvents implements an internal FIFO queue for caching events
-func (t *Tracee) queueEvents(ctx context.Context, in <-chan *trace.Event) (chan *trace.Event, chan error) {
-	out := make(chan *trace.Event, 10000)
+func (t *Tracee) queueEvents(ctx context.Context, in *pipeline.LKQueue[*trace.Event]) (*pipeline.LKQueue[*trace.Event], chan error) {
+	out := pipeline.NewLKQueue[*trace.Event]()
 	errc := make(chan error, 1)
 	done := make(chan struct{}, 1)
 
@@ -100,7 +101,11 @@ func (t *Tracee) queueEvents(ctx context.Context, in <-chan *trace.Event) (chan 
 			case <-ctx.Done():
 				done <- struct{}{}
 				return
-			case event := <-in:
+			default:
+				event := in.Dequeue()
+				if event == nil {
+					continue
+				}
 				if event != nil {
 					t.config.Cache.Enqueue(event) // may block if queue is full
 				}
@@ -110,7 +115,6 @@ func (t *Tracee) queueEvents(ctx context.Context, in <-chan *trace.Event) (chan 
 
 	// de-cache and send events (free cache space)
 	go func() {
-		defer close(out)
 		defer close(errc)
 
 		for {
@@ -120,7 +124,7 @@ func (t *Tracee) queueEvents(ctx context.Context, in <-chan *trace.Event) (chan 
 			default:
 				event := t.config.Cache.Dequeue() // may block if queue is empty
 				if event != nil {
-					out <- event
+					out.Enqueue(event)
 				}
 			}
 		}
@@ -130,11 +134,10 @@ func (t *Tracee) queueEvents(ctx context.Context, in <-chan *trace.Event) (chan 
 }
 
 // decodeEvents read the events received from the BPF programs and parse it into trace.Event type
-func (t *Tracee) decodeEvents(outerCtx context.Context) (<-chan *trace.Event, <-chan error) {
-	out := make(chan *trace.Event, 10000)
+func (t *Tracee) decodeEvents(outerCtx context.Context) (*pipeline.LKQueue[*trace.Event], <-chan error) {
+	out := pipeline.NewLKQueue[*trace.Event]()
 	errc := make(chan error, 1)
 	go func() {
-		defer close(out)
 		defer close(errc)
 		for dataRaw := range t.eventsChannel {
 			ebpfMsgDecoder := bufferdecoder.New(dataRaw)
@@ -186,7 +189,7 @@ func (t *Tracee) decodeEvents(outerCtx context.Context) (<-chan *trace.Event, <-
 
 			containerInfo := t.containers.GetCgroupInfo(ctx.CgroupID).Container
 
-			evt := trace.Event{
+			evt := &trace.Event{
 				Timestamp:           int(ctx.Ts),
 				ThreadStartTime:     int(ctx.StartTime),
 				ProcessorID:         int(ctx.ProcessorId),
@@ -218,9 +221,10 @@ func (t *Tracee) decodeEvents(outerCtx context.Context) (<-chan *trace.Event, <-
 			}
 
 			select {
-			case out <- &evt:
 			case <-outerCtx.Done():
 				return
+			default:
+				out.Enqueue(evt)
 			}
 		}
 	}()
@@ -236,34 +240,37 @@ func parseContextFlags(flags uint32) trace.ContextFlags {
 	}
 }
 
-func (t *Tracee) processEvents(ctx context.Context, in <-chan *trace.Event) (<-chan *trace.Event, <-chan error) {
-	out := make(chan *trace.Event, 10000)
+func (t *Tracee) processEvents(ctx context.Context, in *pipeline.LKQueue[*trace.Event]) (*pipeline.LKQueue[*trace.Event], <-chan error) {
+	out := pipeline.NewLKQueue[*trace.Event]()
 	errc := make(chan error, 1)
 	go func() {
-		defer close(out)
 		defer close(errc)
-		for event := range in {
-			err := t.processEvent(event)
-			if err != nil {
-				t.handleError(err)
-				continue
-			}
-
-			if (t.config.Filter.ContFilter.Value() || t.config.Filter.NewContFilter.Enabled()) && event.ContainerID == "" {
-				// Don't trace false container positives -
-				// a container filter is set by the user, but this event wasn't originated in a container.
-				// Although kernel filters shouldn't submit such events, we do this check to be on the safe side.
-				// For example, it might be that a new cgroup was created, and not by a container runtime,
-				// while we still didn't processed the cgroup_mkdir event and removed the cgroupid from the bpf container map.
-				id := events.ID(event.EventID)
-				// don't skip cgroup_mkdir and cgroup_rmdir so we can derive container_create and container_remove events
-				if id != events.CgroupMkdir && id != events.CgroupRmdir {
+		for {
+			select {
+			default:
+				event := in.Dequeue()
+				if event == nil {
 					continue
 				}
-			}
+				err := t.processEvent(event)
+				if err != nil {
+					t.handleError(err)
+					continue
+				}
 
-			select {
-			case out <- event:
+				if (t.config.Filter.ContFilter.Value() || t.config.Filter.NewContFilter.Enabled()) && event.ContainerID == "" {
+					// Don't trace false container positives -
+					// a container filter is set by the user, but this event wasn't originated in a container.
+					// Although kernel filters shouldn't submit such events, we do this check to be on the safe side.
+					// For example, it might be that a new cgroup was created, and not by a container runtime,
+					// while we still didn't processed the cgroup_mkdir event and removed the cgroupid from the bpf container map.
+					id := events.ID(event.EventID)
+					// don't skip cgroup_mkdir and cgroup_rmdir so we can derive container_create and container_remove events
+					if id != events.CgroupMkdir && id != events.CgroupRmdir {
+						continue
+					}
+				}
+				out.Enqueue(event)
 			case <-ctx.Done():
 				return
 			}
@@ -273,18 +280,20 @@ func (t *Tracee) processEvents(ctx context.Context, in <-chan *trace.Event) (<-c
 }
 
 // deriveEvents is the derivation pipeline stage
-func (t *Tracee) deriveEvents(ctx context.Context, in <-chan *trace.Event) (<-chan *trace.Event, <-chan error) {
-	out := make(chan *trace.Event)
+func (t *Tracee) deriveEvents(ctx context.Context, in *pipeline.LKQueue[*trace.Event]) (*pipeline.LKQueue[*trace.Event], <-chan error) {
+	out := pipeline.NewLKQueue[*trace.Event]()
 	errc := make(chan error, 1)
 
 	go func() {
-		defer close(out)
 		defer close(errc)
-
 		for {
 			select {
-			case event := <-in:
-				out <- event
+			default:
+				event := in.Dequeue()
+				if event == nil {
+					continue
+				}
+				out.Enqueue(event)
 
 				// Derive event before parse its arguments
 				derivatives, errors := derive.DeriveEvent(*event, t.eventDerivations)
@@ -294,7 +303,7 @@ func (t *Tracee) deriveEvents(ctx context.Context, in <-chan *trace.Event) (<-ch
 				}
 
 				for _, derivative := range derivatives {
-					out <- &derivative
+					out.Enqueue(&derivative)
 				}
 
 			case <-ctx.Done():
@@ -306,38 +315,48 @@ func (t *Tracee) deriveEvents(ctx context.Context, in <-chan *trace.Event) (<-ch
 	return out, errc
 }
 
-func (t *Tracee) sinkEvents(ctx context.Context, in <-chan *trace.Event) <-chan error {
+func (t *Tracee) sinkEvents(ctx context.Context, in *pipeline.LKQueue[*trace.Event]) <-chan error {
 	errc := make(chan error, 1)
 
 	go func() {
 		defer close(errc)
-		for event := range in {
-			// Only emit events requested by the user
-			id := events.ID(event.EventID)
-			if t.events[id].emit {
-				if t.config.Output.ParseArguments {
-					err := events.ParseArgs(event)
-					if err != nil {
-						t.handleError(err)
-						continue
-					}
-					if t.config.Output.ParseArgumentsFDs {
-						err := events.ParseArgsFDs(event, t.FDArgPathMap)
+		for {
+			select {
+			default:
+				event := in.Dequeue()
+				if event == nil {
+					continue
+				}
+				id := events.ID(event.EventID)
+				// Only emit events requested by the user
+				if t.events[id].emit {
+					if t.config.Output.ParseArguments {
+						err := events.ParseArgs(event)
 						if err != nil {
 							t.handleError(err)
 							continue
 						}
+						if t.config.Output.ParseArgumentsFDs {
+							err := events.ParseArgsFDs(event, t.FDArgPathMap)
+							if err != nil {
+								t.handleError(err)
+								continue
+							}
+						}
+					}
+					select {
+					case t.config.ChanEvents <- *event:
+						t.stats.EventCount.Increment()
+						event = nil
+					case <-ctx.Done():
+						return
 					}
 				}
-				select {
-				case t.config.ChanEvents <- *event:
-					t.stats.EventCount.Increment()
-					event = nil
-				case <-ctx.Done():
-					return
-				}
+			case <-ctx.Done():
+				return
 			}
 		}
+
 	}()
 
 	return errc
