@@ -15,6 +15,10 @@ func ContainerCreate(containers *containers.Containers) deriveFunction {
 
 func deriveContainerCreateArgs(containers *containers.Containers) func(event trace.Event) ([]interface{}, error) {
 	return func(event trace.Event) ([]interface{}, error) {
+		// if cgroup_id is from non default hid (v1 case), the cgroup info query will fail, so we skip
+		if check, err := isCgroupEventInHid(&event, containers); !check {
+			return nil, err
+		}
 		cgroupId, err := parse.ArgUint64Val(&event, "cgroup_id")
 		if err != nil {
 			return nil, err
@@ -34,4 +38,18 @@ func deriveContainerCreateArgs(containers *containers.Containers) func(event tra
 		}
 		return nil, nil
 	}
+}
+
+// isCgroupEventInHid checks if cgroup event is relevant for deriving container event in it's hierarchy id.
+// in tracee we only care about containers inside the cpuset controller, as such other hierarchy ids will lead
+// to a failed query.
+func isCgroupEventInHid(event *trace.Event, containers *containers.Containers) (bool, error) {
+	if !containers.IsCgroupV1() {
+		return true, nil
+	}
+	hierarchyID, err := parse.ArgUint32Val(event, "hierarchy_id")
+	if err != nil {
+		return false, err
+	}
+	return containers.GetCgroupV1HID() == int(hierarchyID), nil
 }
