@@ -1,6 +1,8 @@
 package derive
 
 import (
+	"fmt"
+
 	"github.com/aquasecurity/tracee/pkg/containers"
 	"github.com/aquasecurity/tracee/pkg/events"
 	"github.com/aquasecurity/tracee/pkg/events/parse"
@@ -15,6 +17,7 @@ func ContainerCreate(containers *containers.Containers) deriveFunction {
 
 func deriveContainerCreateArgs(containers *containers.Containers) func(event trace.Event) ([]interface{}, error) {
 	return func(event trace.Event) ([]interface{}, error) {
+		fmt.Println("derive container_create")
 		cgroupId, err := parse.ArgUint64Val(&event, "cgroup_id")
 		if err != nil {
 			return nil, err

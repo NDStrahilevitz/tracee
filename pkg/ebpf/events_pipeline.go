@@ -181,6 +181,7 @@ func (t *Tracee) decodeEvents(outerCtx context.Context) (<-chan *trace.Event, <-
 				ctx.Ts += t.bootTime
 			}
 
+			fmt.Println("decode event")
 			containerInfo := t.containers.GetCgroupInfo(ctx.CgroupID).Container
 
 			evt := trace.Event{

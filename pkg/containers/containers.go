@@ -298,10 +298,13 @@ func (c *Containers) CgroupRemove(cgroupId uint64, hierarchyID uint32) {
 
 // CgroupMkdir adds cgroupInfo of a created cgroup dir to Containers struct.
 func (c *Containers) CgroupMkdir(cgroupId uint64, subPath string, hierarchyID uint32) (CgroupInfo, error) {
+	fmt.Printf("CgroupMkdir: querying cgroupid (fast path) %d\n", cgroupId)
+
 	// cgroupv1: no need to check other controllers than the default
 	switch c.cgroups.GetDefaultCgroup().(type) {
 	case *cgroup.CgroupV1:
 		if c.cgroups.GetDefaultCgroupHierarchyID() != int(hierarchyID) {
+			fmt.Printf("non default hierarchy cgroupid %d (hid = %d, default = %d) \n", cgroupId, hierarchyID, c.cgroups.GetDefaultCgroupHierarchyID())
 			return CgroupInfo{}, nil
 		}
 	}
@@ -309,6 +312,7 @@ func (c *Containers) CgroupMkdir(cgroupId uint64, subPath string, hierarchyID ui
 	// Find container cgroup dir path to get directory stats
 	curTime := time.Now()
 	path, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, subPath)
+	fmt.Printf("CgroupMkdir: cgroupid dir (fast path) %d dir = %s\n", cgroupId, subPath)
 	if err == nil {
 		var stat syscall.Stat_t
 		if err := syscall.Stat(path, &stat); err == nil {
@@ -338,6 +342,7 @@ func (c *Containers) FindContainerCgroupID32LSB(containerID string) []uint32 {
 
 // GetCgroupInfo returns the Containers struct cgroupInfo data of a given cgroupId.
 func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
+	fmt.Printf("querying cgroupid (slow path) %d\n", cgroupId)
 	if !c.CgroupExists(cgroupId) {
 		// There should be a cgroupInfo for the given cgroupId but there isn't.
 		// Tracee might be processing an event for an already created container
@@ -353,9 +358,13 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 			if err = syscall.Stat(path, &stat); err == nil {
 				info, err := c.CgroupUpdate(cgroupId, path, time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec))
 				if err == nil {
+					fmt.Printf("found cgroupid %d\n", cgroupId)
 					return info
 				}
 			}
+		} else {
+			fmt.Printf("failed to find cgroupid %d\n", cgroupId)
+
 		}
 	}
 

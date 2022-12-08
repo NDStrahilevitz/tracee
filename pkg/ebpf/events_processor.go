@@ -274,6 +274,7 @@ func (t *Tracee) processEvent(event *trace.Event) error {
 			// If cgroupId is from a regular cgroup directory, and not the
 			// container base directory (from known runtimes), it should be
 			// removed from the containers bpf map.
+			fmt.Printf("removing from bpf map (cgroupid = %d, hid = %d)\n", cgroupId, hId)
 			t.containers.RemoveFromBpfMap(t.bpfModule, cgroupId, hId)
 		}
 
