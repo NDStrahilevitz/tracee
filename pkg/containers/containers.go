@@ -17,6 +17,7 @@ import (
 	"github.com/aquasecurity/libbpfgo"
 	"github.com/aquasecurity/tracee/pkg/cgroup"
 	cruntime "github.com/aquasecurity/tracee/pkg/containers/runtime"
+	"github.com/aquasecurity/tracee/pkg/logger"
 )
 
 // Containers contains information about running containers in the host.
@@ -86,6 +87,10 @@ func (c *Containers) GetDefaultCgroupHierarchyID() int {
 	return c.cgroups.GetDefaultCgroupHierarchyID()
 }
 
+func (c *Containers) GetCgroupVersion() cgroup.CgroupVersion {
+	return c.cgroups.GetDefaultCgroup().GetVersion()
+}
+
 // Populate populates Containers struct by reading mounted proc and cgroups fs.
 func (c *Containers) Populate() error {
 	return c.populate()
@@ -115,7 +120,7 @@ func GetContainerIdFromTaskDir(taskPath string) (string, error) {
 func (c *Containers) populate() error {
 	fn := func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			logger.Warn("error populating cgroups containers map", "path", path, "error", err)
 			return nil
 		}
 		if !d.IsDir() {
@@ -131,11 +136,25 @@ func (c *Containers) populate() error {
 		inodeNumber := stat.Ino
 		statusChange := time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec)
 		_, err = c.CgroupUpdate(inodeNumber, path, statusChange)
+		fmt.Printf("Populated path %s inode %d\n", path, stat.Ino)
 
 		return err
 	}
 
-	return filepath.WalkDir(c.cgroups.GetDefaultCgroup().GetMountPoint(), fn)
+	rootPath := c.cgroups.GetDefaultCgroup().GetMountPoint()
+
+	// first populate the root cgroup
+	// var stat syscall.Stat_t
+	// err := syscall.Stat(rootPath, &stat)
+	// if err != nil {
+	// 	return err
+	// }
+	// _, _ = c.CgroupUpdate(stat.Ino, rootPath, time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec))
+
+	// fmt.Printf("Populated rootpath %s inode %d\n", rootPath, stat.Ino)
+
+	// populate the subdirs
+	return filepath.WalkDir(rootPath, fn)
 }
 
 // CgroupUpdate checks if given path belongs to a known container runtime,
@@ -273,6 +292,7 @@ func (c *Containers) CgroupRemove(cgroupId uint64, hierarchyID uint32) {
 		}
 	}
 
+	fmt.Printf("CgroupRmdir: removing cgroupid %d hid %d\n", cgroupId, hierarchyID)
 	now := time.Now()
 	var deleted []uint64
 	c.mtx.Lock()
@@ -342,8 +362,8 @@ func (c *Containers) FindContainerCgroupID32LSB(containerID string) []uint32 {
 
 // GetCgroupInfo returns the Containers struct cgroupInfo data of a given cgroupId.
 func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
-	fmt.Printf("querying cgroupid (slow path) %d\n", cgroupId)
 	if !c.CgroupExists(cgroupId) {
+		fmt.Printf("querying cgroupid (slow path) %d\n", cgroupId)
 		// There should be a cgroupInfo for the given cgroupId but there isn't.
 		// Tracee might be processing an event for an already created container
 		// before the CgroupMkdirEventID logic was executed, for example.
@@ -358,13 +378,16 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 			if err = syscall.Stat(path, &stat); err == nil {
 				info, err := c.CgroupUpdate(cgroupId, path, time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec))
 				if err == nil {
-					fmt.Printf("found cgroupid %d\n", cgroupId)
+					fmt.Printf("found cgroupid (quick path) %d\n", cgroupId)
 					return info
+				} else {
+					fmt.Printf("error adding cgroupid (quick path) %d (err %v)", cgroupId, err)
 				}
+			} else {
+				fmt.Printf("GetCgroupInfo, stat error cgroupId = %d, %v\n", cgroupId, err)
 			}
 		} else {
-			fmt.Printf("failed to find cgroupid %d\n", cgroupId)
-
+			fmt.Printf("failed to find cgroupid (slow path) %d, err = %v\n", cgroupId, err)
 		}
 	}
 
