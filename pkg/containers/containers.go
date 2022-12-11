@@ -308,7 +308,7 @@ func (c *Containers) CgroupMkdir(cgroupId uint64, subPath string, hierarchyID ui
 
 	// Find container cgroup dir path to get directory stats
 	curTime := time.Now()
-	path, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, subPath)
+	path, err := c.getCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, subPath)
 	if err == nil {
 		var stat syscall.Stat_t
 		if err := syscall.Stat(path, &stat); err == nil {
@@ -347,7 +347,7 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 		// cgroupInfo in the Containers struct. An empty subPath will make
 		// getCgroupPath() to walk all cgroupfs directories until it finds the
 		// directory of given cgroupId.
-		path, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, "")
+		path, err := c.getCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, "")
 		if err == nil {
 			var stat syscall.Stat_t
 			if err = syscall.Stat(path, &stat); err == nil {
@@ -364,6 +364,65 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 	c.mtx.RUnlock()
 
 	return cgroupInfo
+}
+
+// getCgroupPath walks the cgroup fs and provides the cgroup directory path of
+// given cgroupId and subPath (related to cgroup fs root dir). If subPath is
+// empty, then all directories from cgroup fs will be searched for the given
+// cgroupId.
+//
+// WARNING: The function relies on the existing cgroups map to skip already traversed paths
+// according to their ctime.
+// as such this isn't a generally usable function and is specifically optimized to find
+// the cgroupPath of NEW cgroup ids.
+func (c *Containers) getCgroupPath(rootDir string, cgroupId uint64, subPath string) (string, error) {
+	entries, err := os.ReadDir(rootDir)
+	if err != nil {
+		return "", err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		entryPath := filepath.Join(rootDir, entry.Name())
+		var stat syscall.Stat_t
+		if err := syscall.Stat(entryPath, &stat); err == nil {
+			// Lower 32 bits of the cgroup id == inode number of matching cgroupfs entry
+			entryCgroupId := uint32(stat.Ino)
+			statCtime := time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec)
+			c.mtx.RLock()
+			// if no ctime is cached, cache it now
+			// if the cgroup is relevant it will later be fully inputted
+			if entry, ok := c.cgroupsMap[entryCgroupId]; !ok {
+				c.mtx.RUnlock()
+				c.mtx.Lock()
+				c.cgroupsMap[entryCgroupId] = CgroupInfo{
+					Ctime: statCtime,
+				}
+				c.mtx.Unlock()
+			} else {
+				c.mtx.RUnlock()
+				if entry.Ctime.Equal(statCtime) {
+					// container creation updates the ctime of all it's parents up to /sys/fs/cgroup
+					// as such if the cached ctime matches the stat ctime, we can skip this dir entry
+					continue
+				}
+			}
+			// Check if this cgroup path belongs to cgroupId
+			if entryCgroupId == uint32(cgroupId) && strings.HasSuffix(entryPath, subPath) {
+				return entryPath, nil
+			}
+		}
+		// No match at this dir level: continue recursively
+		path, err := c.getCgroupPath(entryPath, cgroupId, subPath)
+		if err == nil {
+			return path, nil
+		}
+	}
+
+	return "", fs.ErrNotExist
 }
 
 // GetContainers provides a list of all existing containers.

@@ -2,12 +2,9 @@ package cgroup
 
 import (
 	"bufio"
-	"io/fs"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/aquasecurity/tracee/pkg/mount"
 )
@@ -366,41 +363,4 @@ func GetCgroupControllerHierarchy(subsys string) (int, error) {
 	}
 
 	return value, nil
-}
-
-// GetCgroupPath walks the cgroup fs and provides the cgroup directory path of
-// given cgroupId and subPath (related to cgroup fs root dir). If subPath is
-// empty, then all directories from cgroup fs will be searched for the given
-// cgroupId.
-func GetCgroupPath(rootDir string, cgroupId uint64, subPath string) (string, error) {
-	entries, err := os.ReadDir(rootDir)
-	if err != nil {
-		return "", err
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		entryPath := filepath.Join(rootDir, entry.Name())
-		if strings.HasSuffix(entryPath, subPath) {
-			// Lower 32 bits of the cgroup id == inode number of matching cgroupfs entry
-			var stat syscall.Stat_t
-			if err := syscall.Stat(entryPath, &stat); err == nil {
-				// Check if this cgroup path belongs to cgroupId
-				if (stat.Ino & 0xFFFFFFFF) == (cgroupId & 0xFFFFFFFF) {
-					return entryPath, nil
-				}
-			}
-		}
-
-		// No match at this dir level: continue recursively
-		path, err := GetCgroupPath(entryPath, cgroupId, subPath)
-		if err == nil {
-			return path, nil
-		}
-	}
-
-	return "", fs.ErrNotExist
 }
