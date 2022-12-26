@@ -200,7 +200,7 @@ type Tracee struct {
 	procInfo          *procinfo.ProcInfo
 	eventsSorter      *sorting.EventsChronologicalSorter
 	eventDerivations  derive.Table
-	kernelSymbols     *helpers.KernelSymbolTable
+	kernelSymbols     helpers.KernelSymbolTable
 	triggerContexts   trigger.Context
 	running           bool
 	outDir            *os.File // All file operations to output dir should be through the utils package file operations (like utils.OpenAt) using this directory file.
@@ -386,8 +386,7 @@ func (t *Tracee) Init() error {
 
 	if initReq.kallsyms {
 		err = capabilities.GetInstance().Requested(func() error { // ring2
-
-			t.kernelSymbols, err = helpers.NewKernelSymbolsMap()
+			t.kernelSymbols, err = helpers.NewLazyKernelSymbolsMap()
 			if err != nil {
 				t.Close()
 				return fmt.Errorf("error creating symbols map: %v", err)
@@ -396,7 +395,6 @@ func (t *Tracee) Init() error {
 				return fmt.Errorf("kernel symbols were not loaded currectly")
 			}
 			return nil
-
 		}, cap.SYSLOG)
 	}
 	if err != nil {
@@ -1668,18 +1666,14 @@ func (t *Tracee) triggerSeqOpsIntegrityCheckCall(
 
 func (t *Tracee) updateKallsyms() error {
 	return capabilities.GetInstance().Requested(func() error { // ring2
-
-		kernelSymbols, err := helpers.NewKernelSymbolsMap()
+		err := t.kernelSymbols.Refresh()
 		if err != nil {
 			return err
 		}
-		if !initialization.ValidateKsymbolsTable(kernelSymbols) {
+		if !initialization.ValidateKsymbolsTable(t.kernelSymbols) {
 			debug.PrintStack()
 			return errors.New("invalid ksymbol table")
 		}
-		t.kernelSymbols = kernelSymbols
-
 		return nil
-
 	}, cap.SYSLOG)
 }
