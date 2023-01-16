@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/aquasecurity/tracee/pkg/containers/runtime"
-	"github.com/aquasecurity/tracee/pkg/logger"
 )
 
 func containersHelp() string {
@@ -38,20 +37,14 @@ func contains(s []string, val string) bool {
 	return false
 }
 
-func PrepareContainers(containerFlags []string) (runtime.Sockets, error) {
+func PrepareContainers(containerFlags []string) (*runtime.Sockets, error) {
 	if len(containerFlags) == 0 {
-		return runtime.Autodiscover(func(err error, runtime runtime.RuntimeId, socket string) {
-			if err != nil {
-				logger.Debug("RuntimeSockets: failed to register default", "socket", runtime.String(), "error", err)
-			} else {
-				logger.Debug("RuntimeSockets: registered default", "socket", runtime.String(), "from", socket)
-			}
-		}), nil
+		return nil, nil
 	}
 
 	supportedRuntimes := []string{"crio", "cri-o", "containerd", "docker"}
 
-	sockets := runtime.Sockets{}
+	sockets := &runtime.Sockets{}
 
 	for _, flag := range containerFlags {
 		parts := strings.Split(flag, ":")

@@ -69,7 +69,7 @@ type Config struct {
 	ChanEvents         chan trace.Event
 	ProcessInfo        bool
 	OSInfo             *helpers.OSInfo
-	Sockets            runtime.Sockets
+	Sockets            *runtime.Sockets
 	ContainersEnrich   bool
 	EngineConfig       engine.Config
 }
@@ -431,9 +431,21 @@ func (t *Tracee) Init() error {
 
 	// Initialize containers enrichment logic
 
+	// Autodiscover sockets if needed (enrichment enabled and sockets not set from config)
+	if t.config.ContainersEnrich && t.config.Sockets == nil {
+		sockets := runtime.Autodiscover(func(err error, runtime runtime.RuntimeId, socket string) {
+			if err != nil {
+				logger.Debug("RuntimeSockets: failed to register default", "socket", runtime.String(), "error", err)
+			} else {
+				logger.Debug("RuntimeSockets: registered default", "socket", runtime.String(), "from", socket)
+			}
+		})
+		t.config.Sockets = &sockets
+	}
+
 	t.containers, err = containers.New(
 		t.cgroups,
-		t.config.Sockets,
+		*t.config.Sockets,
 		"containers_map",
 	)
 	if err != nil {
