@@ -420,18 +420,10 @@ func (t *Tracee) deriveEvents(ctx context.Context, in <-chan *trace.Event) (<-ch
 		for {
 			select {
 			case event := <-in:
-				if event.EventID == int(events.CgroupMkdir) && event.MatchedScopes == uint64(0) {
-					cgroupPath, _ := parse.ArgVal[string](event, "cgroup_path")
-					logger.Warn("[event derive before send] cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
-				}
+				eventCopy := *event
 				out <- event
-
-				if event.EventID == int(events.CgroupMkdir) && event.MatchedScopes == uint64(0) {
-					cgroupPath, _ := parse.ArgVal[string](event, "cgroup_path")
-					logger.Warn("[event derive] cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
-				}
 				// Derive event before parse its arguments
-				derivatives, errors := derive.DeriveEvent(*event, t.eventDerivations)
+				derivatives, errors := derive.DeriveEvent(eventCopy, t.eventDerivations)
 
 				for _, err := range errors {
 					t.handleError(err)
