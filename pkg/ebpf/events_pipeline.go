@@ -12,6 +12,7 @@ import (
 	"github.com/aquasecurity/tracee/pkg/bufferdecoder"
 	"github.com/aquasecurity/tracee/pkg/events"
 	"github.com/aquasecurity/tracee/pkg/events/derive"
+	"github.com/aquasecurity/tracee/pkg/events/parse"
 	"github.com/aquasecurity/tracee/pkg/logger"
 	"github.com/aquasecurity/tracee/pkg/utils"
 	"github.com/aquasecurity/tracee/types/trace"
@@ -237,6 +238,11 @@ func (t *Tracee) decodeEvents(outerCtx context.Context, sourceChan chan []byte) 
 				}
 			}
 
+			if ctx.EventID == events.CgroupMkdir && ctx.MatchedScopes == uint64(0) {
+				cgroupPath, _ := parse.ArgVal[string](&evt, "cgroup_path")
+				logger.Warn("cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
+			}
+
 			select {
 			case out <- &evt:
 			case <-outerCtx.Done():
@@ -254,6 +260,9 @@ func (t *Tracee) computeScopes(event *trace.Event) uint64 {
 	eventID := events.ID(event.EventID)
 	origMatchedScopes := event.MatchedScopes
 	matchedScopes := event.MatchedScopes
+	if event.EventID == int(events.ContainerCreate) {
+		logger.Info("container_create scopes", "scopes", origMatchedScopes)
+	}
 
 	for filterScope := range t.config.FilterScopes.Map() {
 		bitOffset := uint(filterScope.ID)
@@ -261,20 +270,32 @@ func (t *Tracee) computeScopes(event *trace.Event) uint64 {
 		// Events submitted with matching scopes.
 		// The scope must have its bit cleared when it does not match.
 		if !utils.HasBit(origMatchedScopes, bitOffset) {
+			if event.EventID == int(events.ContainerCreate) {
+				logger.Info("container_create missing bit", "scope_id", bitOffset)
+			}
 			continue
 		}
 
 		if !filterScope.ContextFilter.Filter(*event) {
+			if event.EventID == int(events.ContainerCreate) {
+				logger.Info("container_create fail context")
+			}
 			utils.ClearBit(&matchedScopes, bitOffset)
 			continue
 		}
 
 		if !filterScope.RetFilter.Filter(eventID, int64(event.ReturnValue)) {
+			if event.EventID == int(events.ContainerCreate) {
+				logger.Info("container_create fail ret")
+			}
 			utils.ClearBit(&matchedScopes, bitOffset)
 			continue
 		}
 
 		if !filterScope.ArgFilter.Filter(eventID, event.Args) {
+			if event.EventID == int(events.ContainerCreate) {
+				logger.Info("container_create fail args")
+			}
 			utils.ClearBit(&matchedScopes, bitOffset)
 			continue
 		}
@@ -294,17 +315,25 @@ func (t *Tracee) computeScopes(event *trace.Event) uint64 {
 
 		if filterScope.UIDFilter.Enabled() &&
 			!filterScope.UIDFilter.InMinMaxRange(uint32(event.UserID)) {
+			if event.EventID == int(events.ContainerCreate) {
+				logger.Info("container_create fail uid")
+			}
 			utils.ClearBit(&matchedScopes, bitOffset)
 			continue
 		}
 
 		if filterScope.PIDFilter.Enabled() &&
 			!filterScope.PIDFilter.InMinMaxRange(uint32(event.HostProcessID)) {
+			if event.EventID == int(events.ContainerCreate) {
+				logger.Info("container_create fail pid")
+			}
 			utils.ClearBit(&matchedScopes, bitOffset)
 			continue
 		}
 	}
-
+	if event.EventID == int(events.ContainerCreate) {
+		logger.Info("container_create scopes end", "scopes", matchedScopes)
+	}
 	return matchedScopes
 }
 
@@ -358,7 +387,15 @@ func (t *Tracee) processEvents(ctx context.Context, in <-chan *trace.Event) (<-c
 					if event.MatchedScopes == 0 {
 						continue
 					}
+					if event.EventID == int(events.CgroupMkdir) && event.MatchedScopes == uint64(0) {
+						cgroupPath, _ := parse.ArgVal[string](event, "cgroup_path")
+						logger.Warn("cgroup mkdir with zeroed scopes after false positive check", "cgroup_path", cgroupPath)
+					}
 				}
+			}
+			if event.EventID == int(events.CgroupMkdir) && event.MatchedScopes == uint64(0) {
+				cgroupPath, _ := parse.ArgVal[string](event, "cgroup_path")
+				logger.Warn("[event processing] cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
 			}
 
 			select {
@@ -383,8 +420,16 @@ func (t *Tracee) deriveEvents(ctx context.Context, in <-chan *trace.Event) (<-ch
 		for {
 			select {
 			case event := <-in:
+				if event.EventID == int(events.CgroupMkdir) && event.MatchedScopes == uint64(0) {
+					cgroupPath, _ := parse.ArgVal[string](event, "cgroup_path")
+					logger.Warn("[event derive before send] cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
+				}
 				out <- event
 
+				if event.EventID == int(events.CgroupMkdir) && event.MatchedScopes == uint64(0) {
+					cgroupPath, _ := parse.ArgVal[string](event, "cgroup_path")
+					logger.Warn("[event derive] cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
+				}
 				// Derive event before parse its arguments
 				derivatives, errors := derive.DeriveEvent(*event, t.eventDerivations)
 

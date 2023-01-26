@@ -2,6 +2,8 @@ package derive
 
 import (
 	"github.com/aquasecurity/tracee/pkg/events"
+	"github.com/aquasecurity/tracee/pkg/events/parse"
+	"github.com/aquasecurity/tracee/pkg/logger"
 	"github.com/aquasecurity/tracee/types/trace"
 )
 
@@ -20,6 +22,10 @@ type Table map[events.ID]map[events.ID]struct {
 
 // DeriveEvent takes a trace.Event and checks if it can derive additional events from it as defined by a derivationTable.
 func DeriveEvent(event trace.Event, derivationTable Table) ([]trace.Event, []error) {
+	if event.EventID == int(events.CgroupMkdir) && event.MatchedScopes == uint64(0) {
+		cgroupPath, _ := parse.ArgVal[string](&event, "cgroup_path")
+		logger.Warn("[in derive event] cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
+	}
 	derivatives := []trace.Event{}
 	errors := []error{}
 	deriveFns := derivationTable[events.ID(event.EventID)]

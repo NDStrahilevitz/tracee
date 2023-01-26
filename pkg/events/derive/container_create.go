@@ -1,10 +1,13 @@
 package derive
 
 import (
+	"fmt"
+
 	"github.com/aquasecurity/tracee/pkg/cgroup"
 	"github.com/aquasecurity/tracee/pkg/containers"
 	"github.com/aquasecurity/tracee/pkg/events"
 	"github.com/aquasecurity/tracee/pkg/events/parse"
+	"github.com/aquasecurity/tracee/pkg/logger"
 	"github.com/aquasecurity/tracee/types/trace"
 )
 
@@ -17,6 +20,13 @@ func ContainerCreate(containers *containers.Containers) deriveFunction {
 func deriveContainerCreateArgs(containers *containers.Containers) func(event trace.Event) ([]interface{}, error) {
 	return func(event trace.Event) ([]interface{}, error) {
 		// if cgroup_id is from non default hid (v1 case), the cgroup info query will fail, so we skip
+		cgroupPath, err := parse.ArgVal[string](&event, "cgroup_path")
+		if event.MatchedScopes == uint64(0) {
+			logger.Warn("[container_create.go] cgroup mkdir with zeroed scopes", "cgroup_path", cgroupPath)
+		}
+		if err != nil {
+			return nil, err
+		}
 		if check, err := isCgroupEventInHid(&event, containers); !check {
 			return nil, err
 		}
@@ -25,6 +35,7 @@ func deriveContainerCreateArgs(containers *containers.Containers) func(event tra
 			return nil, err
 		}
 		if info := containers.GetCgroupInfo(cgroupId); info.Container.ContainerId != "" {
+			logger.Info("container id", "path", cgroupPath, "id", info.Container.ContainerId, "cgroup_mkdir scopes", fmt.Sprintf("0x%016x", event.MatchedScopes))
 			args := []interface{}{
 				info.Runtime.String(),
 				info.Container.ContainerId,
@@ -38,6 +49,8 @@ func deriveContainerCreateArgs(containers *containers.Containers) func(event tra
 			}
 			return args, nil
 		}
+		logger.Warn("no container id", "path", cgroupPath)
+
 		return nil, nil
 	}
 }
