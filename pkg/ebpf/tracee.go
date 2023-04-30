@@ -703,6 +703,13 @@ func (t *Tracee) RegisterEventDerivation(deriveFrom events.ID, deriveTo events.I
 	return t.eventDerivations.Register(deriveFrom, deriveTo, deriveCondition, deriveLogic)
 }
 
+// Returns tracee's internal container tracker.
+//
+// WARNING: PERFORMING ANY STATE MODIFYING OPERATION ON THIS OBJECT MAY CAUSE FUTURE UNINTENDED BEHAVIOUR IN TRACEE.
+func (t *Tracee) Containers() *containers.Containers {
+	return t.containers
+}
+
 // options config should match defined values in ebpf code
 const (
 	optExecEnv uint32 = 1 << iota
