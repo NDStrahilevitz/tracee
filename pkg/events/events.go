@@ -5942,6 +5942,7 @@ var Definitions = eventDefinitions{
 				Events: []eventDependency{{EventID: SecuritySocketAccept}},
 				TailCalls: []TailCall{
 					{MapName: "sys_exit_tails", MapIndexes: []uint32{uint32(Accept), uint32(Accept4)}, ProgName: "syscall__accept4"},
+					{MapName: "sys_exit_init_tail", MapIndexes: []uint32{uint32(Accept), uint32(Accept4)}, ProgName: "sys_exit_init"},
 				},
 			},
 			Sets: []string{},
