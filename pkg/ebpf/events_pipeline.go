@@ -206,7 +206,7 @@ func (t *Tracee) decodeEvents(outerCtx context.Context, sourceChan chan []byte) 
 
 			containerInfo := t.containers.GetCgroupInfo(ctx.CgroupID).Container
 
-			flags := parseContextFlags(ctx.Flags)
+			flags := parseContextFlags(containerInfo.ContainerId, ctx.Flags)
 			syscall := ""
 			if ctx.Syscall != noSyscall {
 				var err error
@@ -336,15 +336,19 @@ func (t *Tracee) shouldProcessEvent(event *trace.Event) bool {
 	return event.MatchedScopes != 0
 }
 
-func parseContextFlags(flags uint32) trace.ContextFlags {
+func parseContextFlags(containerId string, flags uint32) trace.ContextFlags {
 	const (
 		ContainerStartFlag = 1 << iota
 		IsCompatFlag
 	)
-	return trace.ContextFlags{
-		ContainerStarted: (flags & ContainerStartFlag) != 0,
-		IsCompat:         (flags & IsCompatFlag) != 0,
-	}
+
+	var cflags trace.ContextFlags
+	// Handle the edge case where containerStarted flag remains true despite an empty containerId.
+	// See #3251 for more details.
+	cflags.ContainerStarted = (containerId != "") && (flags&ContainerStartFlag) != 0
+	cflags.IsCompat = (flags & IsCompatFlag) != 0
+
+	return cflags
 }
 
 // Get the syscall name from its ID, taking into account architecture and 32bit/64bit modes
