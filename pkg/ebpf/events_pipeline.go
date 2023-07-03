@@ -149,6 +149,7 @@ func (t *Tracee) decodeEvents(outerCtx context.Context, sourceChan chan []byte) 
 		defer close(out)
 		defer close(errc)
 		for dataRaw := range sourceChan {
+			t.config.OnEventRecv()
 			ebpfMsgDecoder := bufferdecoder.New(dataRaw)
 			var ctx bufferdecoder.Context
 			if err := ebpfMsgDecoder.DecodeContext(&ctx); err != nil {
