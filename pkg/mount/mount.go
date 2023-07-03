@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/aquasecurity/tracee/pkg/capabilities"
+	"github.com/aquasecurity/tracee/pkg/logger"
 	"github.com/aquasecurity/tracee/pkg/utils"
 	"kernel.org/pub/linux/libs/security/libcap/cap"
 )
@@ -56,6 +57,9 @@ func NewMountOnce(source, fstype, data, where string) (*MountOnce, error) {
 			return nil, err
 		}
 		m.managed = true // managed by this object
+		logger.Info("[Mount] managed mount success", "source", source, "fstype", fstype, "where", where)
+	} else {
+		logger.Info("[Mount] already mounted", "source", source, "fstype", fstype, "where", where)
 	}
 
 	m.mounted = true

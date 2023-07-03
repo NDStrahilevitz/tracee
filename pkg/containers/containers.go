@@ -81,6 +81,8 @@ func New(
 
 	containers.enricher = runtimeService
 
+	logger.Info("container tracker cgroups info", "version", cgroups.GetDefaultCgroup().GetVersion(), "mountpoint", cgroups.GetDefaultCgroup().GetMountPoint())
+
 	return containers, nil
 }
 
@@ -141,6 +143,7 @@ func (c *Containers) populate() error {
 
 		inodeNumber := stat.Ino
 		statusChange := time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec)
+		logger.Info("(populate) adding cgroup", "cgroupId", inodeNumber, "cgroup_path", path)
 		_, err = c.CgroupUpdate(inodeNumber, path, statusChange)
 
 		return err
@@ -170,6 +173,7 @@ func (c *Containers) CgroupUpdate(cgroupId uint64, path string, ctime time.Time)
 	}
 
 	c.mtx.Lock()
+	logger.Info("adding cgroup", "cgroupId", cgroupId, "cgroup_path", path)
 	c.cgroupsMap[uint32(cgroupId)] = info
 	c.mtx.Unlock()
 
@@ -365,6 +369,7 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 		// directory of given cgroupId.
 		path, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, "")
 		if err == nil {
+			logger.Info("cgroup doesn't exist GetCgroupInfo, extracted path", "cgroupId", cgroupId, "cgroup_path", path)
 			var stat syscall.Stat_t
 			if err = syscall.Stat(path, &stat); err == nil {
 				info, err := c.CgroupUpdate(cgroupId, path, time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec))
@@ -380,6 +385,8 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 					return info
 				}
 			}
+		} else {
+			logger.Error("cgroup doesn't exist but received error when checking path", "cgroupId", cgroupId, "error", err)
 		}
 	}
 
