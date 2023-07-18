@@ -3,6 +3,7 @@ package containers
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -37,6 +38,7 @@ type CgroupInfo struct {
 	Runtime       cruntime.RuntimeId
 	ContainerRoot bool // is the cgroup directory the root of its container
 	Ctime         time.Time
+	Dead          bool // is the cgroup no longer existing
 	expiresAt     time.Time
 }
 
@@ -144,7 +146,7 @@ func (c *Containers) populate() error {
 		inodeNumber := stat.Ino
 		statusChange := time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec)
 		logger.Info("(populate) adding cgroup", "cgroupId", inodeNumber, "cgroup_path", path)
-		_, err = c.CgroupUpdate(inodeNumber, path, statusChange)
+		_, err = c.CgroupUpdate(inodeNumber, path, statusChange, false)
 
 		return err
 	}
@@ -155,7 +157,7 @@ func (c *Containers) populate() error {
 // CgroupUpdate checks if given path belongs to a known container runtime,
 // saving container information in Containers CgroupInfo map.
 // NOTE: ALL given cgroup dir paths are stored in CgroupInfo map.
-func (c *Containers) CgroupUpdate(cgroupId uint64, path string, ctime time.Time) (CgroupInfo, error) {
+func (c *Containers) CgroupUpdate(cgroupId uint64, path string, ctime time.Time, dead bool) (CgroupInfo, error) {
 	// Cgroup paths should be stored and evaluated relative to the mountpoint,
 	// trim it from the path.
 	path = strings.TrimPrefix(path, c.cgroups.GetDefaultCgroup().GetMountPoint())
@@ -170,6 +172,7 @@ func (c *Containers) CgroupUpdate(cgroupId uint64, path string, ctime time.Time)
 		Runtime:       containerRuntime,
 		ContainerRoot: isRoot,
 		Ctime:         ctime,
+		Dead:          dead,
 	}
 
 	c.mtx.Lock()
@@ -201,6 +204,10 @@ func (c *Containers) EnrichCgroupInfo(cgroupId uint64) (cruntime.ContainerMetada
 
 	if containerId == "" {
 		return metadata, fmt.Errorf("no containerId")
+	}
+
+	if info.Dead {
+		return metadata, fmt.Errorf("cgroup does not exist anymore (dead)")
 	}
 
 	//There might be a performance overhead with the cancel
@@ -311,6 +318,7 @@ func (c *Containers) CgroupRemove(cgroupId uint64, hierarchyID uint32) {
 
 	if info, ok := c.cgroupsMap[uint32(cgroupId)]; ok {
 		info.expiresAt = now.Add(expiryTime)
+		info.Dead = true
 		c.cgroupsMap[uint32(cgroupId)] = info
 		c.deleted = append(c.deleted, cgroupId)
 	}
@@ -328,19 +336,16 @@ func (c *Containers) CgroupMkdir(cgroupId uint64, subPath string, hierarchyID ui
 
 	// Find container cgroup dir path to get directory stats
 	curTime := time.Now()
-	path, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, subPath)
+	path, ctime, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, subPath)
 	if err == nil {
-		var stat syscall.Stat_t
-		if err := syscall.Stat(path, &stat); err == nil {
-			// Add cgroupInfo to Containers struct w/ found path (and its last modification time)
-			return c.CgroupUpdate(cgroupId, path, time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec))
-		}
+		// Add cgroupInfo to Containers struct w/ found path (and its last modification time)
+		return c.CgroupUpdate(cgroupId, path, ctime, false)
 	}
 
 	// No entry found: container may have already exited.
 	// Add cgroupInfo to Containers struct with existing data.
 	// In this case, ctime is just an estimation (current time).
-	return c.CgroupUpdate(cgroupId, subPath, curTime)
+	return c.CgroupUpdate(cgroupId, subPath, curTime, true)
 }
 
 // FindContainerCgroupID32LSB returns the 32 LSB of the Cgroup ID for a given container ID
@@ -367,23 +372,23 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 		// cgroupInfo in the Containers struct. An empty subPath will make
 		// getCgroupPath() to walk all cgroupfs directories until it finds the
 		// directory of given cgroupId.
-		path, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, "")
+		path, ctime, err := cgroup.GetCgroupPath(c.cgroups.GetDefaultCgroup().GetMountPoint(), cgroupId, "")
 		if err == nil {
 			logger.Info("cgroup doesn't exist GetCgroupInfo, extracted path", "cgroupId", cgroupId, "cgroup_path", path)
-			var stat syscall.Stat_t
-			if err = syscall.Stat(path, &stat); err == nil {
-				info, err := c.CgroupUpdate(cgroupId, path, time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec))
-				if err == nil {
-					return info
-				}
+			logger.Info("updating cgroup from recursive path (path found)", "cgroupId", cgroupId, "cgroup_path", path)
+			info, err := c.CgroupUpdate(cgroupId, path, ctime, false)
+			if err == nil {
+				return info
 			} else {
-				// No entry found: container may have already exited.
-				// Add cgroupInfo to Containers struct with existing data.
-				// In this case, ctime is just an estimation (current time).
-				info, err := c.CgroupUpdate(cgroupId, path, time.Now())
-				if err != nil {
-					return info
-				}
+				logger.Error("error updating cgroup - recursive path (path found)", "error", err)
+			}
+		} else if errors.Is(err, fs.ErrNotExist) {
+			logger.Info("cgroup doesn't exist GetCgroupInfo, appending ghost cgroup info", "cgroupId", cgroupId)
+			info, err := c.CgroupUpdate(cgroupId, "", time.Now(), true)
+			if err != nil {
+				return info
+			} else {
+				logger.Error("error updating cgroup - recursive path (dead path)", "error", err)
 			}
 		} else {
 			logger.Error("cgroup doesn't exist but received error when checking path", "cgroupId", cgroupId, "error", err)
