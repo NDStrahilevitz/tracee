@@ -277,9 +277,10 @@ func getContainerIdFromCgroup(cgroupPath string) (string, cruntime.RuntimeId, bo
 }
 
 // CgroupRemove removes cgroupInfo of deleted cgroup dir from Containers struct.
-// NOTE: Expiration logic of 5 seconds to avoid race conditions (if cgroup dir
+// NOTE: Expiration logic of 30 seconds to avoid race conditions (if cgroup dir
 // event arrives too fast and its cgroupInfo data is still needed).
 func (c *Containers) CgroupRemove(cgroupId uint64, hierarchyID uint32) {
+	const expiryTime = 30 * time.Second
 	// cgroupv1: no need to check other controllers than the default
 	switch c.cgroups.GetDefaultCgroup().(type) {
 	case *cgroup.CgroupV1:
@@ -305,7 +306,7 @@ func (c *Containers) CgroupRemove(cgroupId uint64, hierarchyID uint32) {
 	c.deleted = deleted
 
 	if info, ok := c.cgroupsMap[uint32(cgroupId)]; ok {
-		info.expiresAt = now.Add(5 * time.Second)
+		info.expiresAt = now.Add(expiryTime)
 		c.cgroupsMap[uint32(cgroupId)] = info
 		c.deleted = append(c.deleted, cgroupId)
 	}
@@ -368,6 +369,14 @@ func (c *Containers) GetCgroupInfo(cgroupId uint64) CgroupInfo {
 			if err = syscall.Stat(path, &stat); err == nil {
 				info, err := c.CgroupUpdate(cgroupId, path, time.Unix(stat.Ctim.Sec, stat.Ctim.Nsec))
 				if err == nil {
+					return info
+				}
+			} else {
+				// No entry found: container may have already exited.
+				// Add cgroupInfo to Containers struct with existing data.
+				// In this case, ctime is just an estimation (current time).
+				info, err := c.CgroupUpdate(cgroupId, path, time.Now())
+				if err != nil {
 					return info
 				}
 			}
