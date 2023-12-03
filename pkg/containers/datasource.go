@@ -27,10 +27,11 @@ func (ctx SignaturesDataSource) Get(key interface{}) (map[string]interface{}, er
 		if cgroup.Container.ContainerId == containerId {
 			containerData := cgroup.Container
 			podData := containerData.Pod
-			result := make(map[string]interface{}, 7)
+			result := make(map[string]interface{}, 8)
 			result["container_id"] = containerData.ContainerId
 			result["container_name"] = containerData.Name
 			result["container_image"] = containerData.Image
+			result["container_ctime"] = int(cgroup.Ctime.UnixNano())
 			result["k8s_pod_id"] = podData.UID
 			result["k8s_pod_name"] = podData.Name
 			result["k8s_pod_namespace"] = podData.Namespace
@@ -50,6 +51,7 @@ func (ctx SignaturesDataSource) Schema() string {
 		"container_id":      "string",
 		"container_name":    "string",
 		"container_image":   "string",
+		"container_ctime":   "int",
 		"k8s_pod_id":        "string",
 		"k8s_pod_name":      "string",
 		"k8s_pod_namespace": "string",
@@ -60,7 +62,7 @@ func (ctx SignaturesDataSource) Schema() string {
 }
 
 func (ctx SignaturesDataSource) Version() uint {
-	return 1
+	return 2
 }
 
 func (ctx SignaturesDataSource) Namespace() string {
