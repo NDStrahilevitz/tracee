@@ -9,6 +9,8 @@ package bufferdecoder
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"runtime"
 
 	"github.com/aquasecurity/tracee/pkg/errfmt"
 	"github.com/aquasecurity/tracee/pkg/events"
@@ -46,6 +48,9 @@ func (decoder *EbpfDecoder) BytesRead() int {
 
 // MoveCursor moves the buffer cursor over n bytes. Returns the new cursor position.
 func (decoder *EbpfDecoder) MoveCursor(n int) int {
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += n
 	return decoder.cursor
 }
@@ -88,6 +93,8 @@ func (decoder *EbpfDecoder) DecodeContext(eCtx *EventContext) error {
 	eCtx.MatchedPolicies = binary.LittleEndian.Uint64(decoder.buffer[offset+136 : offset+144])
 	// event_context end
 
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += eCtx.GetSizeBytes()
 	return nil
 }
@@ -113,7 +120,7 @@ func (decoder *EbpfDecoder) DecodeArguments(args []trace.Argument, argnum int, e
 		args[idx] = arg
 	}
 
-	// Fill missing arguments metadata
+	// Fill missing arguments
 	for i := 0; i < len(evtParams); i++ {
 		if args[i].Value == nil {
 			args[i].ArgMeta = evtParams[i]
@@ -131,6 +138,9 @@ func (decoder *EbpfDecoder) DecodeUint8(msg *uint8) error {
 		return ErrBufferTooShort
 	}
 	*msg = decoder.buffer[decoder.cursor]
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -143,6 +153,9 @@ func (decoder *EbpfDecoder) DecodeInt8(msg *int8) error {
 		return ErrBufferTooShort
 	}
 	*msg = int8(decoder.buffer[offset])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -155,6 +168,9 @@ func (decoder *EbpfDecoder) DecodeUint16(msg *uint16) error {
 		return ErrBufferTooShort
 	}
 	*msg = binary.LittleEndian.Uint16(decoder.buffer[offset : offset+readAmount])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -167,6 +183,9 @@ func (decoder *EbpfDecoder) DecodeUint16BigEndian(msg *uint16) error {
 		return ErrBufferTooShort
 	}
 	*msg = binary.BigEndian.Uint16(decoder.buffer[offset : offset+readAmount])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -179,6 +198,9 @@ func (decoder *EbpfDecoder) DecodeInt16(msg *int16) error {
 		return ErrBufferTooShort
 	}
 	*msg = int16(binary.LittleEndian.Uint16(decoder.buffer[offset : offset+readAmount]))
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -191,6 +213,9 @@ func (decoder *EbpfDecoder) DecodeUint32(msg *uint32) error {
 		return ErrBufferTooShort
 	}
 	*msg = binary.LittleEndian.Uint32(decoder.buffer[offset : offset+readAmount])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -203,6 +228,9 @@ func (decoder *EbpfDecoder) DecodeUint32BigEndian(msg *uint32) error {
 		return ErrBufferTooShort
 	}
 	*msg = binary.BigEndian.Uint32(decoder.buffer[offset : offset+readAmount])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -215,6 +243,9 @@ func (decoder *EbpfDecoder) DecodeInt32(msg *int32) error {
 		return ErrBufferTooShort
 	}
 	*msg = int32(binary.LittleEndian.Uint32(decoder.buffer[offset : offset+readAmount]))
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -227,6 +258,9 @@ func (decoder *EbpfDecoder) DecodeUint64(msg *uint64) error {
 		return ErrBufferTooShort
 	}
 	*msg = binary.LittleEndian.Uint64(decoder.buffer[offset : offset+readAmount])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -239,6 +273,9 @@ func (decoder *EbpfDecoder) DecodeInt64(msg *int64) error {
 		return ErrBufferTooShort
 	}
 	*msg = int64(binary.LittleEndian.Uint64(decoder.buffer[decoder.cursor : decoder.cursor+readAmount]))
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += readAmount
 	return nil
 }
@@ -250,6 +287,8 @@ func (decoder *EbpfDecoder) DecodeBool(msg *bool) error {
 		return ErrBufferTooShort
 	}
 	*msg = (decoder.buffer[offset] != 0)
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor++
 	return nil
 }
@@ -262,6 +301,9 @@ func (decoder *EbpfDecoder) DecodeBytes(msg []byte, size int) error {
 		return ErrBufferTooShort
 	}
 	_ = copy(msg[:], decoder.buffer[offset:offset+size])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += size
 	return nil
 }
@@ -278,14 +320,20 @@ func (decoder *EbpfDecoder) ReadBytesLen(len int) ([]byte, error) {
 	return res, nil
 }
 
-// DecodeIntArray translate from the decoder buffer, starting from the decoder cursor, to msg, size * 4 bytes (in order to get int32).
-func (decoder *EbpfDecoder) DecodeIntArray(msg []int32, size int) error {
+// DecodeInt32Array translate from the decoder buffer, starting from the decoder cursor, to msg, size * 4 bytes (in order to get int32).
+func (decoder *EbpfDecoder) DecodeInt32Array(msg []int32, size int) error {
 	offset := decoder.cursor
 	if len(decoder.buffer[offset:]) < size*4 {
+		fmt.Println("buffer size from offset:", decoder.cursor)
+		fmt.Printf("buffer from offset: %08b\n", decoder.buffer[offset:])
 		return ErrBufferTooShort
 	}
 	for i := 0; i < size; i++ {
+		fmt.Println("ayy lmao", i)
 		msg[i] = int32(binary.LittleEndian.Uint32(decoder.buffer[decoder.cursor : decoder.cursor+4]))
+
+		pc, _, _, _ := runtime.Caller(0)
+		fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 		decoder.cursor += 4
 	}
 	return nil
@@ -330,6 +378,9 @@ func (decoder *EbpfDecoder) DecodeSlimCred(slimCred *SlimCred) error {
 	slimCred.CapEffective = binary.LittleEndian.Uint64(decoder.buffer[offset+56 : offset+64])
 	slimCred.CapBounding = binary.LittleEndian.Uint64(decoder.buffer[offset+64 : offset+72])
 	slimCred.CapAmbient = binary.LittleEndian.Uint64(decoder.buffer[offset+72 : offset+80])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += int(slimCred.GetSizeBytes())
 	return nil
 }
@@ -345,6 +396,9 @@ func (decoder *EbpfDecoder) DecodeChunkMeta(chunkMeta *ChunkMeta) error {
 	_ = copy(chunkMeta.Metadata[:], decoder.buffer[offset+9:offset+37])
 	chunkMeta.Size = int32(binary.LittleEndian.Uint32(decoder.buffer[offset+37 : offset+41]))
 	chunkMeta.Off = binary.LittleEndian.Uint64(decoder.buffer[offset+41 : offset+49])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += int(chunkMeta.GetSizeBytes())
 	return nil
 }
@@ -359,6 +413,9 @@ func (decoder *EbpfDecoder) DecodeVfsFileMeta(vfsFileMeta *VfsFileMeta) error {
 	vfsFileMeta.Inode = binary.LittleEndian.Uint64(decoder.buffer[offset+4 : offset+12])
 	vfsFileMeta.Mode = binary.LittleEndian.Uint32(decoder.buffer[offset+12 : offset+16])
 	vfsFileMeta.Pid = binary.LittleEndian.Uint32(decoder.buffer[offset+16 : offset+20])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += int(vfsFileMeta.GetSizeBytes())
 	return nil
 }
@@ -373,6 +430,9 @@ func (decoder *EbpfDecoder) DecodeKernelModuleMeta(kernelModuleMeta *KernelModul
 	kernelModuleMeta.Inode = binary.LittleEndian.Uint64(decoder.buffer[offset+4 : offset+12])
 	kernelModuleMeta.Pid = binary.LittleEndian.Uint32(decoder.buffer[offset+12 : offset+16])
 	kernelModuleMeta.Size = binary.LittleEndian.Uint32(decoder.buffer[offset+16 : offset+20])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += int(kernelModuleMeta.GetSizeBytes())
 	return nil
 }
@@ -387,6 +447,9 @@ func (decoder *EbpfDecoder) DecodeBpfObjectMeta(bpfObjectMeta *BpfObjectMeta) er
 	bpfObjectMeta.Rand = binary.LittleEndian.Uint32(decoder.buffer[offset+16 : offset+20])
 	bpfObjectMeta.Pid = binary.LittleEndian.Uint32(decoder.buffer[offset+20 : offset+24])
 	bpfObjectMeta.Size = binary.LittleEndian.Uint32(decoder.buffer[offset+24 : offset+28])
+
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += int(bpfObjectMeta.GetSizeBytes())
 	return nil
 }
@@ -400,6 +463,8 @@ func (decoder *EbpfDecoder) DecodeMprotectWriteMeta(mprotectWriteMeta *MprotectW
 	mprotectWriteMeta.Ts = binary.LittleEndian.Uint64(decoder.buffer[offset : offset+8])
 	mprotectWriteMeta.Pid = binary.LittleEndian.Uint32(decoder.buffer[offset+8 : offset+12])
 
+	pc, _, _, _ := runtime.Caller(0)
+	fmt.Println("increased cursor in line", runtime.FuncForPC(pc).Name())
 	decoder.cursor += int(mprotectWriteMeta.GetSizeBytes())
 	return nil
 }

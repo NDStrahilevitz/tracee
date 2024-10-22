@@ -340,14 +340,16 @@ statfunc int save_sockaddr_to_buf(args_buffer_t *buf, struct socket *sock, u8 in
 
 #define DEC_ARG(n, enc_arg) ((enc_arg >> (8 * n)) & 0xFF)
 
+// types whose arguments needs to be directly in type_size_table (arg = (void *) args->args[i])
 #define BITMASK_INDIRECT_VALUE_TYPES                                                               \
-    ((u64) 1 << STR_T | (u64) 1 << SOCKADDR_T | (u64) 1 << INT_ARR_2_T | (u64) 1 << TIMESPEC_T)
+    ((u64) 1 << INT_ARR_2_T | (u64) 1 << STR_T | (u64) 1 << SOCKADDR_T | (u64) 1 << TIMESPEC_T)
 
+// types whose arguments needs to be handled through their address in type_size_table
+// ((arg = (void *) &args->args[i]))
 #define BITMASK_COMMON_TYPES                                                                       \
     ((u64) 1 << INT_T | (u64) 1 << UINT_T | (u64) 1 << LONG_T | (u64) 1 << ULONG_T |               \
-     (u64) 1 << OFF_T_T | (u64) 1 << MODE_T_T | (u64) 1 << DEV_T_T | (u64) 1 << SIZE_T_T |         \
-     (u64) 1 << POINTER_T | (u64) 1 << STR_ARR_T | (u64) 1 << BYTES_T | (u64) 1 << U16_T |         \
-     (u64) 1 << CRED_T | (u64) 1 << UINT64_ARR_T | (u64) 1 << U8_T)
+     (u64) 1 << U16_T | (u64) 1 << U8_T | (u64) 1 << UINT64_ARR_T | (u64) 1 << POINTER_T |         \
+     (u64) 1 << BYTES_T | (u64) 1 << STR_ARR_T| (u64) 1 << U8_T)
 
 #define ARG_TYPE_MAX_ARRAY (u8) TIMESPEC_T // last element defined in argument_type_e
 
@@ -359,20 +361,16 @@ static u8 type_size_table[ARG_TYPE_MAX_ARRAY + 1] = {
     [UINT_T] = sizeof(unsigned int),
     [LONG_T] = sizeof(long),
     [ULONG_T] = sizeof(unsigned long),
-    [OFF_T_T] = sizeof(off_t),
-    [MODE_T_T] = sizeof(mode_t),
-    [DEV_T_T] = sizeof(dev_t),
-    [SIZE_T_T] = sizeof(size_t),
+    [U16_T] = sizeof(unsigned short),
+    [U8_T] = sizeof(unsigned char),
+    [INT_ARR_2_T] = sizeof(int[2]),
+    [UINT64_ARR_T] = 0,
     [POINTER_T] = sizeof(void *),
+    [BYTES_T] = 0,
     [STR_T] = 0,
     [STR_ARR_T] = 0,
     [SOCKADDR_T] = sizeof(short),
-    [BYTES_T] = 0,
-    [U16_T] = sizeof(u16),
     [CRED_T] = sizeof(struct cred),
-    [INT_ARR_2_T] = sizeof(int[2]),
-    [UINT64_ARR_T] = 0,
-    [U8_T] = sizeof(u8),
     [TIMESPEC_T] = 0,
 };
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"slices"
 	"strconv"
 	"sync"
@@ -166,16 +167,21 @@ func (t *Tracee) decodeEvents(ctx context.Context, sourceChan chan []byte) (<-ch
 		defer close(errc)
 		for dataRaw := range sourceChan {
 			ebpfMsgDecoder := bufferdecoder.New(dataRaw)
+			fmt.Printf("data: %08b", dataRaw)
 			var eCtx bufferdecoder.EventContext
 			if err := ebpfMsgDecoder.DecodeContext(&eCtx); err != nil {
 				t.handleError(err)
 				continue
 			}
+			fmt.Println("bytes read 1", ebpfMsgDecoder.BytesRead())
 			var argnum uint8
 			if err := ebpfMsgDecoder.DecodeUint8(&argnum); err != nil {
 				t.handleError(err)
 				continue
 			}
+			fmt.Println("bytes read 2", ebpfMsgDecoder.BytesRead())
+
+			fmt.Println("event args num", argnum)
 			eventId := events.ID(eCtx.EventID)
 			if !events.Core.IsDefined(eventId) {
 				t.handleError(errfmt.Errorf("failed to get configuration of event %d", eventId))

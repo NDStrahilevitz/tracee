@@ -2,6 +2,7 @@ package bufferdecoder
 
 import (
 	"encoding/binary"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -26,6 +27,8 @@ func readArgFromBuff(id events.ID, ebpfMsgDecoder *EbpfDecoder, params []trace.A
 	var argIdx uint8
 	var arg trace.Argument
 
+	fmt.Printf("buffer from offset: %08b\n", ebpfMsgDecoder.buffer[ebpfMsgDecoder.cursor:])
+
 	err = ebpfMsgDecoder.DecodeUint8(&argIdx)
 	if err != nil {
 		return 0, arg, errfmt.Errorf("error reading arg index: %v", err)
@@ -33,8 +36,11 @@ func readArgFromBuff(id events.ID, ebpfMsgDecoder *EbpfDecoder, params []trace.A
 	if int(argIdx) >= len(params) {
 		return 0, arg, errfmt.Errorf("invalid arg index %d", argIdx)
 	}
+	fmt.Println("bytes read 3", ebpfMsgDecoder.BytesRead())
+
 	arg.ArgMeta = params[argIdx]
 	argType := GetDecodeType(arg.Type)
+	fmt.Println("read arg from buff: ", argIdx, argType)
 
 	switch argType {
 	case trace.U8_T:
@@ -130,7 +136,7 @@ func readArgFromBuff(id events.ID, ebpfMsgDecoder *EbpfDecoder, params []trace.A
 		res, err = ebpfMsgDecoder.ReadBytesLen(int(size))
 	case trace.INT_ARR_2_T:
 		var intArray [2]int32
-		err = ebpfMsgDecoder.DecodeIntArray(intArray[:], 2)
+		err = ebpfMsgDecoder.DecodeInt32Array(intArray[:], 2)
 		if err != nil {
 			return uint(argIdx), arg, errfmt.Errorf("error reading int elements: %v", err)
 		}
@@ -160,6 +166,7 @@ func readArgFromBuff(id events.ID, ebpfMsgDecoder *EbpfDecoder, params []trace.A
 		return uint(argIdx), arg, errfmt.WrapError(err)
 	}
 	arg.Value = res
+	fmt.Println("bytes read 4", ebpfMsgDecoder.BytesRead())
 	return uint(argIdx), arg, nil
 }
 

@@ -158,26 +158,22 @@ typedef struct args {
 // pkg/bufferdecoder/eventsreader.go.
 enum argument_type_e
 {
-    NONE_T = 0UL,
-    INT_T,
-    UINT_T,
-    LONG_T,
-    ULONG_T,
-    OFF_T_T,
-    MODE_T_T,
-    DEV_T_T,
-    SIZE_T_T,
-    POINTER_T,
-    STR_T,
-    STR_ARR_T,
-    SOCKADDR_T,
-    BYTES_T,
-    U16_T,
-    CRED_T,
-    INT_ARR_2_T,
-    UINT64_ARR_T,
-    U8_T,
-    TIMESPEC_T,
+    NONE_T = 0UL, // Default value - the argument does not originate from a decodable buffer.
+	INT_T,
+	UINT_T,
+	LONG_T,
+	ULONG_T,
+	U16_T,
+	U8_T,
+	INT_ARR_2_T,
+	UINT64_ARR_T,
+	POINTER_T,
+	BYTES_T,
+	STR_T,
+	STR_ARR_T,
+	SOCKADDR_T,
+	CRED_T,
+	TIMESPEC_T,
     TYPE_MAX = 255UL
 };
 
