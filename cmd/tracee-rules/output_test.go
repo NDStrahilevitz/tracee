@@ -85,7 +85,7 @@ HostName: foobar.local
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			actualOutput := NewSyncBuffer([]byte{})
-			findingCh, err := setupOutput(actualOutput, "", "", "", tc.outputFormat)
+			findingCh, err := setupOutput(actualOutput, "", "", "", tc.outputFormat, nil)
 			require.NoError(t, err, tc.name)
 
 			sm, err := signature.FakeSignature{}.GetMetadata()

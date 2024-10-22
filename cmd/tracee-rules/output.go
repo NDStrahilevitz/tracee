@@ -11,8 +11,10 @@ import (
 	"github.com/Masterminds/sprig/v3"
 
 	"github.com/aquasecurity/tracee/pkg/errfmt"
+	"github.com/aquasecurity/tracee/pkg/events/findings"
 	"github.com/aquasecurity/tracee/pkg/logger"
 	"github.com/aquasecurity/tracee/types/detect"
+	"github.com/aquasecurity/tracee/types/protocol"
 	"github.com/aquasecurity/tracee/types/trace"
 )
 
@@ -39,7 +41,7 @@ func setupTemplate(inputTemplateFile string) (*template.Template, error) {
 	}
 }
 
-func setupOutput(w io.Writer, webhook string, webhookTemplate string, contentType string, outputTemplate string) (chan *detect.Finding, error) {
+func setupOutput(w io.Writer, webhook string, webhookTemplate string, contentType string, outputTemplate string, tracee chan protocol.Event) (chan *detect.Finding, error) {
 	out := make(chan *detect.Finding)
 	var err error
 
@@ -59,6 +61,22 @@ func setupOutput(w io.Writer, webhook string, webhookTemplate string, contentTyp
 		for res := range out {
 			switch res.Event.Payload.(type) {
 			case trace.Event:
+				if tracee != nil {
+					select {
+					case _, ok := <-tracee:
+						if !ok {
+							logger.Debugw("Tracee input channel closed")
+							return
+						}
+					default:
+						e, err := findings.FindingToEvent(res)
+						if err != nil {
+							logger.Errorw("Error converting finding to event for feedback", "error", err)
+							continue
+						}
+						tracee <- e.ToProtocol()
+					}
+				}
 				if err := tOutput.Execute(w, res); err != nil {
 					logger.Errorw("Writing to output: " + err.Error())
 				}

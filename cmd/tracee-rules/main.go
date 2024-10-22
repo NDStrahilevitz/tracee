@@ -17,6 +17,8 @@ import (
 
 	"github.com/aquasecurity/tracee/pkg/capabilities"
 	"github.com/aquasecurity/tracee/pkg/cmd/flags/server"
+	"github.com/aquasecurity/tracee/pkg/cmd/initialize/sigs"
+	"github.com/aquasecurity/tracee/pkg/events"
 	"github.com/aquasecurity/tracee/pkg/logger"
 	"github.com/aquasecurity/tracee/pkg/signatures/engine"
 	"github.com/aquasecurity/tracee/pkg/signatures/signature"
@@ -59,7 +61,7 @@ func main() {
 				rulesDir = []string{c.String("rules-dir")}
 			}
 
-			sigs, _, err := signature.Find(
+			signatures, _, err := signature.Find(
 				target,
 				c.Bool("rego-partial-eval"),
 				rulesDir,
@@ -69,6 +71,8 @@ func main() {
 			if err != nil {
 				return err
 			}
+
+			_ = sigs.CreateEventsFromSignatures(events.StartSignatureID, signatures)
 
 			// can't drop privileges before this point due to signature.Find(),
 			// orelse we would have to raise capabilities in Find() and it can't
@@ -88,7 +92,7 @@ func main() {
 			var loadedSigIDs []string
 			err = capabilities.GetInstance().Specific(
 				func() error {
-					for _, s := range sigs {
+					for _, s := range signatures {
 						m, err := s.GetMetadata()
 						if err != nil {
 							logger.Errorw("Failed to load signature", "error", err)
@@ -105,14 +109,14 @@ func main() {
 			}
 
 			if c.Bool("list-events") {
-				listEvents(os.Stdout, sigs)
+				listEvents(os.Stdout, signatures)
 				return nil
 			}
 
 			logger.Infow("Signatures loaded", "total", len(loadedSigIDs), "signatures", loadedSigIDs)
 
 			if c.Bool("list") {
-				listSigs(os.Stdout, sigs)
+				listSigs(os.Stdout, signatures)
 				return nil
 			}
 
@@ -138,6 +142,7 @@ func main() {
 				c.String("webhook-template"),
 				c.String("webhook-content-type"),
 				c.String("output-template"),
+				inputs.Tracee,
 			)
 			if err != nil {
 				return err
@@ -145,7 +150,7 @@ func main() {
 
 			config := engine.Config{
 				SignatureBufferSize: c.Uint(signatureBufferFlag),
-				Signatures:          sigs,
+				Signatures:          signatures,
 				DataSources:         []detect.DataSource{},
 			}
 			e, err := engine.NewEngine(config, inputs, output)
@@ -273,9 +278,9 @@ func main() {
 	}
 }
 
-func listSigs(w io.Writer, sigs []detect.Signature) {
+func listSigs(w io.Writer, signatures []detect.Signature) {
 	fmt.Fprintf(w, "%-10s %-35s %s %s\n", "ID", "NAME", "VERSION", "DESCRIPTION")
-	for _, sig := range sigs {
+	for _, sig := range signatures {
 		meta, err := sig.GetMetadata()
 		if err != nil {
 			continue
@@ -284,9 +289,9 @@ func listSigs(w io.Writer, sigs []detect.Signature) {
 	}
 }
 
-func listEvents(w io.Writer, sigs []detect.Signature) {
+func listEvents(w io.Writer, signatures []detect.Signature) {
 	m := make(map[string]struct{})
-	for _, sig := range sigs {
+	for _, sig := range signatures {
 		es, _ := sig.GetSelectedEvents()
 		for _, e := range es {
 			if _, ok := m[e.Name]; !ok {
@@ -295,13 +300,13 @@ func listEvents(w io.Writer, sigs []detect.Signature) {
 		}
 	}
 
-	var events []string
+	var evts []string
 	for k := range m {
-		events = append(events, k)
+		evts = append(evts, k)
 	}
 
-	sort.Slice(events, func(i, j int) bool { return events[i] < events[j] })
-	fmt.Fprintln(w, strings.Join(events, ","))
+	sort.Slice(evts, func(i, j int) bool { return evts[i] < evts[j] })
+	fmt.Fprintln(w, strings.Join(evts, ","))
 }
 
 func isRoot() bool {
