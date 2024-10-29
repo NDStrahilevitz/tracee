@@ -42,9 +42,10 @@ type SignatureMetadata struct {
 
 // SignatureEventSelector represents events the signature is subscribed to
 type SignatureEventSelector struct {
-	Source string
-	Name   string
-	Origin string
+	Source   string
+	Name     string
+	Origin   string
+	Required bool
 }
 
 // SignatureHandler is a callback function that reports a finding
