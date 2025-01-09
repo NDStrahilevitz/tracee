@@ -86,7 +86,6 @@ func (t *Tracee) engineEvents(ctx context.Context, in <-chan *trace.Event) (<-ch
 				// shallow clone the event arguments before parsing them (new slice is created),
 				// to keep the eventCopy with raw arguments.
 				eventCopy.Args = slices.Clone(event.Args)
-
 				err := t.parseArguments(event)
 				if err != nil {
 					t.handleError(err)
@@ -99,7 +98,7 @@ func (t *Tracee) engineEvents(ctx context.Context, in <-chan *trace.Event) (<-ch
 			out <- event
 
 			// send the copied event to the rules engine
-			engineInput <- eventCopy.ToProtocol()
+			engineInput <- event.ToProtocol()
 		}
 
 		for {
