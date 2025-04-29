@@ -268,7 +268,7 @@ var CoreEvents = map[ID]Definition{
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "flags"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
@@ -2247,7 +2247,7 @@ var CoreEvents = map[ID]Definition{
 		sets:    []string{"syscalls", "fs", "fs_dir_ops"},
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
@@ -2294,7 +2294,7 @@ var CoreEvents = map[ID]Definition{
 		sets:    []string{"default", "syscalls", "fs", "fs_file_ops"},
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
@@ -2414,7 +2414,7 @@ var CoreEvents = map[ID]Definition{
 		sets:    []string{"default", "syscalls", "fs", "fs_file_attr"},
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
@@ -2438,7 +2438,7 @@ var CoreEvents = map[ID]Definition{
 		sets:    []string{"default", "syscalls", "fs", "fs_file_attr"},
 		fields: []DataField{
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "fd"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
@@ -3423,7 +3423,7 @@ var CoreEvents = map[ID]Definition{
 		sets:    []string{"syscalls", "fs", "fs_file_ops"},
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "dev"}},
 		},
 		dependencies: Dependencies{
@@ -5986,7 +5986,7 @@ var CoreEvents = map[ID]Definition{
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "name"}},
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "oflag"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 			{DecodeAs: data.POINTER_T, ArgMeta: trace.ArgMeta{Type: "trace.Pointer", Name: "attr"}},
 		},
 		dependencies: Dependencies{
@@ -6417,7 +6417,7 @@ var CoreEvents = map[ID]Definition{
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "dirfd"}},
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "flags"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
@@ -6442,7 +6442,7 @@ var CoreEvents = map[ID]Definition{
 		fields: []DataField{
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "dirfd"}},
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
@@ -6467,7 +6467,7 @@ var CoreEvents = map[ID]Definition{
 		fields: []DataField{
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "dirfd"}},
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "dev"}},
 		},
 		dependencies: Dependencies{
@@ -6700,7 +6700,7 @@ var CoreEvents = map[ID]Definition{
 		fields: []DataField{
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "dirfd"}},
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "flags"}},
 		},
 		dependencies: Dependencies{
@@ -12072,7 +12072,7 @@ var CoreEvents = map[ID]Definition{
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "file_name"}},
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "path"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 			{DecodeAs: data.POINTER_T, ArgMeta: trace.ArgMeta{Type: "trace.Pointer", Name: "proc_ops_addr"}},
 		},
 	},
@@ -13059,7 +13059,7 @@ var CoreEvents = map[ID]Definition{
 		sets:    []string{},
 		fields: []DataField{
 			{DecodeAs: data.STR_T, ArgMeta: trace.ArgMeta{Type: "string", Name: "pathname"}},
-			{DecodeAs: data.UINT_T, ArgMeta: trace.ArgMeta{Type: "uint32", Name: "mode"}},
+			{DecodeAs: data.U16_T, ArgMeta: trace.ArgMeta{Type: "uint16", Name: "mode"}},
 		},
 		dependencies: Dependencies{
 			probes: []Probe{
