@@ -2849,8 +2849,7 @@ int BPF_KPROBE(trace_security_socket_connect)
 
     // Save the socket type argument to the event.
     stsb(args_buf, &type, sizeof(u32), 1);
-
-    // Save the sockaddr struct, depending on the family.
+    stsb(args_buf, (void *) &addrlen, sizeof(int), 2);
     size_t sockaddr_len = 0;
     switch (sa_fam) {
         case AF_INET:
@@ -2865,7 +2864,15 @@ int BPF_KPROBE(trace_security_socket_connect)
             break;
     }
 
-    stsb(args_buf, (void *) address, sockaddr_len, 2);
+    stsb(args_buf, (void *) address, sockaddr_len, 3);
+
+    if (sa_fam == AF_UNIX) {
+    char *args_buf_ptr = (char *) args_buf;
+
+    for (int i = sizeof(u32) + sizeof(int) + sizeof(sa_family_t); i < sockaddr_len; i++) {
+        bpf_printk("args_buf[%d] = %d (%c)\n", i, args_buf_ptr[i], args_buf_ptr[i]);
+    }
+    }
 
     // Submit the event.
     return events_perf_submit(&p, 0);

@@ -2,6 +2,7 @@ package bufferdecoder
 
 import (
 	"encoding/binary"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -336,8 +337,11 @@ func readSunPathFromBuff(decoder *EbpfDecoder, max int) (string, error) {
 			// https://elixir.bootlin.com/linux/v6.13.4/source/net/unix/af_unix.c#L72
 			// https://man7.org/linux/man-pages/man7/unix.7.html
 			if i > 0 {
+				fmt.Println("NUL found after the first char")
 				// NUL found after the first char means the end of the string
 				break
+			} else {
+				fmt.Println("NUL found at the first char")
 			}
 		}
 
@@ -345,12 +349,15 @@ func readSunPathFromBuff(decoder *EbpfDecoder, max int) (string, error) {
 	}
 
 	if res[0] == 0 {
+		fmt.Println("res[0] == 0")
 		if len(res) == 1 {
 			res = []byte{} // empty string
+			fmt.Println("res = []byte{}")
 		} else {
 			// abstract socket - res[0] = NUL && res[1] != NUL
 			// https://elixir.bootlin.com/linux/v6.13.4/source/net/unix/af_unix.c#L3438
 			res[0] = '@'
+			fmt.Println("res[0] = '@'")
 		}
 	}
 

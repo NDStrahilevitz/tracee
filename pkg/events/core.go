@@ -11567,6 +11567,7 @@ var CoreEvents = map[ID]Definition{
 		fields: []DataField{
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "sockfd"}},
 			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "type"}},
+			{DecodeAs: data.INT_T, ArgMeta: trace.ArgMeta{Type: "int32", Name: "sockaddr_len"}},
 			{DecodeAs: data.SOCK_ADDR_T, ArgMeta: trace.ArgMeta{Type: "SockAddr", Name: "remote_addr"}},
 		},
 	},

@@ -251,6 +251,14 @@ func Test_readSunPathFromBuff(t *testing.T) {
 			expectError:    false,
 		},
 		{
+			name:           "Buffer started with null terminator",
+			buffer:         []byte{'\u0000', 'A', 'b', 's', 't', 'r', 'a', 'c', 't', 0, 'd'},
+			max:            10,
+			expected:       "@Abstract",
+			expectedCursor: 10,
+			expectError:    false,
+		},
+		{
 			name:           "Zeroed buffer",
 			buffer:         []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			max:            10,
