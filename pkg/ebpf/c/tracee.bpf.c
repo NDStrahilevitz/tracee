@@ -2421,7 +2421,12 @@ int BPF_KPROBE(trace_security_file_open)
     if (!evaluate_data_filters(&p, 0))
         return 0;
 
-    return events_perf_submit(&p, 0);
+    int ret = events_perf_submit(&p, 0);
+
+    if (ret < 0) {
+        tracee_log(ctx, BPF_LOG_LVL_ERROR, BPF_LOG_ID_INIT_CONTEXT, ret);
+    }
+    return ret;
 }
 
 SEC("kprobe/security_sb_mount")
