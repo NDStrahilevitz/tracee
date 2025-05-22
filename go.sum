@@ -399,12 +399,10 @@ github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERo
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/Microsoft/hcsshim v0.12.3 h1:LS9NXqXhMoqNCplK1ApmVSfB4UnVLRDWRapB6EIlxE0=
 github.com/Microsoft/hcsshim v0.12.3/go.mod h1:Iyl1WVpZzr+UkzjekHZbV8o5Z9ZkxNGx6CtY2Qg/JVQ=
+github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250522124659-0f684fe66926 h1:ryENer8FCwsdKQ/uHui87YO+I86p6ogv3H5RBHfRqCQ=
+github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250522124659-0f684fe66926/go.mod h1:OiSb5l/ol8mvyclIATrH9yLQ9lAWxUlBMrHHWCAwBkk=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/aquasecurity/libbpfgo v0.7.0-libbpf-1.4 h1:rQ94U12Xlz2tncE8Rxnw3vpp/9hgUIEu3/Lv0/XQM0Q=
-github.com/aquasecurity/libbpfgo v0.7.0-libbpf-1.4/go.mod h1:iI7QCIZ3kXG0MR+FHsDZck6cYs1y1HyZP3sMObBg0sk=
-github.com/aquasecurity/libbpfgo v0.8.0-libbpf-1.5.0.20250417221229-b9709610f6da h1:U+yVKkIjAjI4vOkF5RAWPkIslm5v6+OnH9O6wHfEL3U=
-github.com/aquasecurity/libbpfgo v0.8.0-libbpf-1.5.0.20250417221229-b9709610f6da/go.mod h1:JQNC5NuGwyYC7IZum6JqPNVHarFAuab+h4lO6t0jIhc=
 github.com/aquasecurity/tracee/api v0.0.0-20250423121028-213b81a1b8f5 h1:zseTkmEkMBo4b2gYzE5dnj6EfEjajipUQLGs+FtTw3M=
 github.com/aquasecurity/tracee/api v0.0.0-20250423121028-213b81a1b8f5/go.mod h1:fCLvZ7yle7SJoMNFSUCNVZo6Qf6xWXUmP0isGvRrIL8=
 github.com/aquasecurity/tracee/signatures/helpers v0.0.0-20250423143044-dcfcaf219805 h1:ZvXdP2rPm+7fTS102MAz/TcW++KalkMVIgQF0x3x5rQ=
@@ -1407,8 +1405,6 @@ k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 h1:M3sRQVHv7vB20Xc2ybTt7ODCeFj6J
 k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 kernel.org/pub/linux/libs/security/libcap/cap v1.2.70 h1:QnLPkuDWWbD5C+3DUA2IUXai5TK6w2zff+MAGccqdsw=
 kernel.org/pub/linux/libs/security/libcap/cap v1.2.70/go.mod h1:/iBwcj9nbLejQitYvUm9caurITQ6WyNHibJk6Q9fiS4=
-kernel.org/pub/linux/libs/security/libcap/cap v1.2.76 h1:mrdLPj8ujM6eIKGtd1PkkuCIodpFFDM42Cfm0YODkIM=
-kernel.org/pub/linux/libs/security/libcap/cap v1.2.76/go.mod h1:7V2BQeHnVAQwhCnCPJ977giCeGDiywVewWF+8vkpPlc=
 kernel.org/pub/linux/libs/security/libcap/psx v1.2.70/go.mod h1:+l6Ee2F59XiJ2I6WR5ObpC1utCQJZ/VLsEbQCD8RG24=
 kernel.org/pub/linux/libs/security/libcap/psx v1.2.76 h1:3DyzQ30OHt3wiOZVL1se2g1PAPJIU7+tMUyvfMUj1dY=
 kernel.org/pub/linux/libs/security/libcap/psx v1.2.76/go.mod h1:+l6Ee2F59XiJ2I6WR5ObpC1utCQJZ/VLsEbQCD8RG24=
