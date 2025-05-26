@@ -613,16 +613,14 @@ struct unix_sock {
     struct unix_address *addr;
 };
 
-#define UNIX_PATH_MAX 108
-
 struct sockaddr_un {
     __kernel_sa_family_t sun_family;
-    char sun_path[UNIX_PATH_MAX];
+    char sun_path[108];
 };
 
 struct unix_address {
     int len;
-    struct sockaddr_un name[];
+    struct sockaddr_un name[0];
 };
 
 struct ipv6_pinfo {
