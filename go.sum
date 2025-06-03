@@ -399,8 +399,8 @@ github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERo
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/Microsoft/hcsshim v0.12.3 h1:LS9NXqXhMoqNCplK1ApmVSfB4UnVLRDWRapB6EIlxE0=
 github.com/Microsoft/hcsshim v0.12.3/go.mod h1:Iyl1WVpZzr+UkzjekHZbV8o5Z9ZkxNGx6CtY2Qg/JVQ=
-github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250603112537-28cd78c042af h1:hYSVzkql9aExtZHHP7GDZQufsmE9q3J2TLH71SGFCiM=
-github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250603112537-28cd78c042af/go.mod h1:JQNC5NuGwyYC7IZum6JqPNVHarFAuab+h4lO6t0jIhc=
+github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250603134035-695b6ee3520d h1:OlIwHLa6Gc5z3X/V3GOhC87H2WQe/5TiEIyMJIP/ZG8=
+github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250603134035-695b6ee3520d/go.mod h1:JQNC5NuGwyYC7IZum6JqPNVHarFAuab+h4lO6t0jIhc=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/aquasecurity/tracee/api v0.0.0-20250423121028-213b81a1b8f5 h1:zseTkmEkMBo4b2gYzE5dnj6EfEjajipUQLGs+FtTw3M=

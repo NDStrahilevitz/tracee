@@ -171,4 +171,4 @@ require (
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.76 // indirect
 )
 
-replace github.com/aquasecurity/libbpfgo => github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250603112537-28cd78c042af
+replace github.com/aquasecurity/libbpfgo => github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250603134035-695b6ee3520d
