@@ -607,6 +607,23 @@ struct events_stats {
 } events_stats SEC(".maps");
 
 typedef struct events_stats events_stats_t;
+
+struct cpu_bufs_submit_attempts {
+    u64 attempts;
+    u64 failures;
+};
+
+typedef struct cpu_bufs_submit_attempts cpu_bufs_submit_attempts_t;
+
+struct cpu_bufs_submit_attempts_map {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 32); // just hard cap
+    __type(key, u16); // just 1 counter entry per cpu
+    __type(value, cpu_bufs_submit_attempts_t); // attempts, failures
+} cpu_bufs_submit_attempts_map SEC(".maps");
+
+typedef struct cpu_bufs_submit_attempts_map cpu_bufs_submit_attempts_map_t;
+
 #endif
 
 statfunc int events_perf_submit(program_data_t *p, long ret)
@@ -639,13 +656,22 @@ statfunc int events_perf_submit(program_data_t *p, long ret)
 
 #ifdef METRICS
     // update event stats
+    u16 curr_cpu = p->event->context.processor_id;
     event_stats_values_t *evt_stat = bpf_map_lookup_elem(&events_stats, &p->event->context.eventid);
-    if (unlikely(evt_stat == NULL))
+    cpu_bufs_submit_attempts_t *attempts = bpf_map_lookup_elem(&cpu_bufs_submit_attempts_map, &curr_cpu);
+    u32 increment = (perf_ret >> (sizeof(perf_ret) * 8 - 1)) & 1; // get the sign bit (1 if negative, 0 if positive)
+    // unlikely purposefully not used to shut up verifier
+    if (attempts == NULL)
+        return perf_ret;
+    if (evt_stat == NULL)
         return perf_ret;
 
+    // assume ret_val is 0 or negative
+    __sync_fetch_and_add(&evt_stat->failures, increment);
+    __sync_fetch_and_add(&attempts->failures, increment);
     __sync_fetch_and_add(&evt_stat->attempts, 1);
-    if (perf_ret < 0)
-        __sync_fetch_and_add(&evt_stat->failures, 1);
+    __sync_fetch_and_add(&attempts->attempts, 1);
+
 #endif
 
     return perf_ret;

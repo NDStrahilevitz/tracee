@@ -1403,6 +1403,7 @@ func (t *Tracee) Run(ctx gocontext.Context) error {
 
 	if version.MetricsBuild() {
 		go t.countPerfEventSubmissions(ctx)
+		go t.countCpuBufsSubmitAttempts(ctx)
 	}
 
 	// Main event loop (polling events perf buffer)
