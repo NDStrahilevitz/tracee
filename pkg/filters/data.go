@@ -167,10 +167,10 @@ func (f *DataFilter) Parse(id events.ID, fieldName string, operatorAndValues str
 	// before the filter is applied
 	valueHandler := func(val string) (string, error) {
 		switch id {
-		case events.SecurityFileOpen,
-			events.MagicWrite,
-			events.SecurityMmapFile:
-			return f.processKernelFilter(val, fieldName)
+		// case events.SecurityFileOpen,
+		// 	events.MagicWrite,
+		// 	events.SecurityMmapFile:
+		// 	return f.processKernelFilter(val, fieldName)
 
 		case events.SysEnter,
 			events.SysExit,

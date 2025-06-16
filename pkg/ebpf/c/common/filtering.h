@@ -453,9 +453,10 @@ statfunc bool evaluate_scope_filters(program_data_t *p)
 
 statfunc bool evaluate_data_filters(program_data_t *p, u8 index)
 {
-    u64 matched_data_filters = match_data_filters(p, index);
-    p->event->context.matched_policies &= matched_data_filters;
-    return p->event->context.matched_policies != 0;
+    return 1;
+    // u64 matched_data_filters = match_data_filters(p, index);
+    // p->event->context.matched_policies &= matched_data_filters;
+    // return p->event->context.matched_policies != 0;
 }
 
 statfunc bool policies_matched(event_data_t *event)
