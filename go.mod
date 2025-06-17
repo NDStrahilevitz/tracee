@@ -20,7 +20,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/mennanov/fmutils v0.3.1
 	github.com/minio/sha256-simd v1.0.1
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/sashabaranov/go-gpt3 v1.4.0
 	github.com/spf13/cobra v1.9.1
@@ -171,4 +170,4 @@ require (
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.76 // indirect
 )
 
-replace github.com/aquasecurity/libbpfgo => github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250616094918-eb3014e765ec
+replace github.com/aquasecurity/libbpfgo => github.com/NDStrahilevitz/libbpfgo v0.2.4-libbpf-0.6.1.0.20250617093130-1c412dccca35
