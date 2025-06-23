@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/aquasecurity/tracee/pkg/events/findings"
 	"github.com/aquasecurity/tracee/pkg/logger"
@@ -88,9 +89,17 @@ func NewEngine(config Config, sources EventSources, output chan *detect.Finding)
 
 // signatureStart is the signature handling business logics.
 func signatureStart(signature detect.Signature, c chan protocol.Event, wg *sync.WaitGroup) {
+	meta, _ := signature.GetMetadata()
+
+	ticker := time.NewTicker(1 * time.Second)
+	go func() {
+		for range ticker.C {
+			fmt.Printf("Signature %s: cap(%d) | len(%d)\n", meta.Name, cap(c), len(c))
+		}
+	}()
+
 	for e := range c {
 		if err := signature.OnEvent(e); err != nil {
-			meta, _ := signature.GetMetadata()
 			logger.Errorw("Handling event by signature " + meta.Name + ": " + err.Error())
 		}
 	}
