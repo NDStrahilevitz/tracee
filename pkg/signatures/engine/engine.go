@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aquasecurity/tracee/pkg/events/findings"
 	"github.com/aquasecurity/tracee/pkg/logger"
 	"github.com/aquasecurity/tracee/pkg/signatures/metrics"
 	"github.com/aquasecurity/tracee/types/detect"
@@ -161,13 +160,13 @@ func (engine *Engine) matchHandler(res *detect.Finding) {
 		return
 		// next section is relevant only for engine-in-pipeline and analyze
 	}
-	e, err := findings.FindingToEvent(res)
-	if err != nil {
-		logger.Errorw("Failed to convert finding to event, will not feedback", "err", err)
-		return
-	}
-	prot := e.ToProtocol()
-	engine.inputs.Tracee <- prot
+	// e, err := findings.FindingToEvent(res)
+	// if err != nil {
+	// 	logger.Errorw("Failed to convert finding to event, will not feedback", "err", err)
+	// 	return
+	// }
+	// prot := e.ToProtocol()
+	// engine.inputs.Tracee <- prot
 }
 
 // checkCompletion is a function that runs at the end of each input source
