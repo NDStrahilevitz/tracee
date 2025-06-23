@@ -62,16 +62,18 @@ func (s *Server) EnableHealthzEndpoint() {
 
 // Start starts the http server on the listen address
 func (s *Server) Start(ctx context.Context, chans []<-chan *trace.Event) {
-	http.HandleFunc("/debug/channels", func(w http.ResponseWriter, _ *http.Request) {
-		stats := map[string]map[string]int{}
-		for i, ch := range chans {
-			stats[fmt.Sprintf("pipeline %d", i)] = map[string]int{
-				"len": len(ch),
-				"cap": cap(ch),
+	if chans != nil {
+		s.mux.HandleFunc("/debug/channels", func(w http.ResponseWriter, _ *http.Request) {
+			stats := map[string]map[string]int{}
+			for i, ch := range chans {
+				stats[fmt.Sprintf("pipeline %d", i)] = map[string]int{
+					"len": len(ch),
+					"cap": cap(ch),
+				}
 			}
-		}
-		json.NewEncoder(w).Encode(stats)
-	})
+			json.NewEncoder(w).Encode(stats)
+		})
+	}
 
 	srvCtx, srvCancel := context.WithCancel(ctx)
 	defer srvCancel()

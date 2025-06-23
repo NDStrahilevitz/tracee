@@ -159,7 +159,7 @@ func main() {
 			defer stop()
 
 			if httpServer != nil {
-				go httpServer.Start(ctx)
+				go httpServer.Start(ctx, nil)
 			}
 
 			e.Start(ctx)
