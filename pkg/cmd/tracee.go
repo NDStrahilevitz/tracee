@@ -14,6 +14,7 @@ import (
 	"github.com/aquasecurity/tracee/pkg/server/grpc"
 	"github.com/aquasecurity/tracee/pkg/server/http"
 	"github.com/aquasecurity/tracee/pkg/utils"
+	"github.com/aquasecurity/tracee/types/trace"
 )
 
 type Runner struct {
@@ -34,7 +35,7 @@ func (r Runner) Run(ctx context.Context) error {
 
 	// Readiness Callback: Tracee is ready to receive events
 	t.AddReadyCallback(
-		func(ctx context.Context) {
+		func(ctx context.Context, chans []<-chan *trace.Event) {
 			logger.Debugw("Tracee is ready callback")
 			if r.HTTPServer != nil {
 				if r.HTTPServer.MetricsEndpointEnabled() {
@@ -43,7 +44,7 @@ func (r Runner) Run(ctx context.Context) error {
 						logger.Errorw("Registering prometheus metrics", "error", err)
 					}
 				}
-				go r.HTTPServer.Start(ctx)
+				go r.HTTPServer.Start(ctx, chans)
 			}
 
 			// start server if one is configured

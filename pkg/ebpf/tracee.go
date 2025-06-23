@@ -116,7 +116,7 @@ type Tracee struct {
 	dnsCache *dnscache.DNSCache
 	// Specific Events Needs
 	triggerContexts trigger.Context
-	readyCallback   func(gocontext.Context)
+	readyCallback   func(gocontext.Context, []<-chan *trace.Event)
 	// Streams
 	streamsManager *streams.StreamsManager
 	// policyManager manages policy state
@@ -1411,8 +1411,9 @@ func (t *Tracee) Run(ctx gocontext.Context) error {
 	t.eventsPerfMap.Poll(pollTimeout)
 
 	pipelineReady := make(chan struct{}, 1)
+	chans := make([]<-chan *trace.Event, 0)
 	go t.processLostEvents() // termination signaled by closing t.done
-	go t.handleEvents(ctx, pipelineReady)
+	go t.handleEvents(ctx, pipelineReady, &chans)
 
 	// Parallel perf buffer with file writes events
 
@@ -1437,7 +1438,7 @@ func (t *Tracee) Run(ctx gocontext.Context) error {
 
 	<-pipelineReady
 	t.running.Store(true) // set running state after writing pid file
-	t.ready(ctx)          // executes ready callback, non blocking
+	t.ready(ctx, chans)   // executes ready callback, non blocking
 	<-ctx.Done()          // block until ctx is cancelled elsewhere
 
 	// Close perf buffers
@@ -1877,15 +1878,15 @@ func (t *Tracee) triggerMemDump(event trace.Event) []error {
 
 // AddReadyCallback sets a callback function to be called when the tracee started all its probes
 // and is ready to receive events
-func (t *Tracee) AddReadyCallback(f func(ctx gocontext.Context)) {
+func (t *Tracee) AddReadyCallback(f func(ctx gocontext.Context, chans []<-chan *trace.Event)) {
 	t.readyCallback = f
 }
 
 // ready executes the ready callback if it was set.
 // doesn't block the execution of the tracee
-func (t *Tracee) ready(ctx gocontext.Context) {
+func (t *Tracee) ready(ctx gocontext.Context, chans []<-chan *trace.Event) {
 	if t.readyCallback != nil {
-		go t.readyCallback(ctx)
+		go t.readyCallback(ctx, chans)
 	}
 }
 
