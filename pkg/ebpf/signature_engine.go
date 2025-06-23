@@ -2,7 +2,10 @@ package ebpf
 
 import (
 	"context"
+	"fmt"
 	"slices"
+	"sync/atomic"
+	"time"
 
 	"github.com/aquasecurity/tracee/pkg/containers"
 	"github.com/aquasecurity/tracee/pkg/dnscache"
@@ -15,6 +18,22 @@ import (
 	"github.com/aquasecurity/tracee/types/protocol"
 	"github.com/aquasecurity/tracee/types/trace"
 )
+
+var (
+	waitingEvents atomic.Int64
+	passedEvents  atomic.Int64
+)
+
+func init() {
+	ticker := time.NewTicker(10 * time.Second)
+	go func() {
+		for range ticker.C {
+			fmt.Printf("engineEvents: waitingEvents: %d\n", waitingEvents.Load())
+			fmt.Printf("engineEvents: passedEvents: %d\n", passedEvents.Load())
+			passedEvents.Store(0)
+		}
+	}()
+}
 
 // engineEvents stage in the pipeline allows signatures detection to be executed in the pipeline
 func (t *Tracee) engineEvents(ctx context.Context, in <-chan *trace.Event) (<-chan *trace.Event, <-chan error) {
@@ -98,8 +117,11 @@ func (t *Tracee) engineEvents(ctx context.Context, in <-chan *trace.Event) (<-ch
 			// it will be sent to print by the sink stage
 			out <- event
 
+			waitingEvents.Add(1)
 			// send the copied event to the rules engine
 			engineInput <- eventCopy.ToProtocol()
+			passedEvents.Add(1)
+			waitingEvents.Add(-1)
 		}
 
 		for {

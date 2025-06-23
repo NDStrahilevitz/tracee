@@ -91,10 +91,10 @@ func NewEngine(config Config, sources EventSources, output chan *detect.Finding)
 func signatureStart(signature detect.Signature, c chan protocol.Event, wg *sync.WaitGroup) {
 	meta, _ := signature.GetMetadata()
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	go func() {
 		for range ticker.C {
-			fmt.Printf("Signature %s: cap(%d) | len(%d)\n", meta.Name, cap(c), len(c))
+			fmt.Printf("{\"signature\": \"%s\", \"cap\": %d, \"len\": %d}\n", meta.Name, cap(c), len(c))
 		}
 	}()
 
