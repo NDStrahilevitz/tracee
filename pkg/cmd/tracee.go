@@ -35,7 +35,7 @@ func (r Runner) Run(ctx context.Context) error {
 
 	// Readiness Callback: Tracee is ready to receive events
 	t.AddReadyCallback(
-		func(ctx context.Context, chans []<-chan *trace.Event) {
+		func(ctx context.Context, chans map[string]<-chan *trace.Event) {
 			logger.Debugw("Tracee is ready callback")
 			if r.HTTPServer != nil {
 				if r.HTTPServer.MetricsEndpointEnabled() {

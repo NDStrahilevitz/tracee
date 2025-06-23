@@ -28,7 +28,7 @@ const noSyscall int32 = -1
 // handleEvents is the main pipeline of tracee. It receives events from the perf buffer
 // and passes them through a series of stages, each stage is a goroutine that performs a
 // specific task on the event. The pipeline is started in a separate goroutine.
-func (t *Tracee) handleEvents(ctx context.Context, initialized chan<- struct{}, chans *[]<-chan *trace.Event) {
+func (t *Tracee) handleEvents(ctx context.Context, initialized chan<- struct{}, chans map[string]<-chan *trace.Event) {
 	logger.Debugw("Starting handleEvents goroutine")
 	defer logger.Debugw("Stopped handleEvents goroutine")
 
@@ -37,14 +37,14 @@ func (t *Tracee) handleEvents(ctx context.Context, initialized chan<- struct{}, 
 	// Decode stage: events are read from the perf buffer and decoded into trace.Event type.
 
 	eventsChan, errc := t.decodeEvents(ctx, t.eventsChannel)
-	*chans = append(*chans, eventsChan)
+	chans["decode"] = eventsChan
 	errcList = append(errcList, errc)
 
 	// Cache stage: events go through a caching function.
 
 	if t.config.Cache != nil {
 		eventsChan, errc = t.queueEvents(ctx, eventsChan)
-		*chans = append(*chans, eventsChan)
+		chans["queue"] = eventsChan
 		errcList = append(errcList, errc)
 	}
 
@@ -52,42 +52,42 @@ func (t *Tracee) handleEvents(ctx context.Context, initialized chan<- struct{}, 
 
 	if t.config.Output.EventsSorting {
 		eventsChan, errc = t.eventsSorter.StartPipeline(ctx, eventsChan, t.config.BlobPerfBufferSize)
-		*chans = append(*chans, eventsChan)
+		chans["sort"] = eventsChan
 		errcList = append(errcList, errc)
 	}
 
 	// Process events stage: events go through a processing functions.
 
 	eventsChan, errc = t.processEvents(ctx, eventsChan)
-	*chans = append(*chans, eventsChan)
+	chans["process"] = eventsChan
 	errcList = append(errcList, errc)
 
 	// Enrichment stage: container events are enriched with additional runtime data.
 
 	if !t.config.NoContainersEnrich { // TODO: remove safe-guard soon.
 		eventsChan, errc = t.enrichContainerEvents(ctx, eventsChan)
-		*chans = append(*chans, eventsChan)
+		chans["enrich"] = eventsChan
 		errcList = append(errcList, errc)
 	}
 
 	// Derive events stage: events go through a derivation function.
 
 	eventsChan, errc = t.deriveEvents(ctx, eventsChan)
-	*chans = append(*chans, eventsChan)
+	chans["derive"] = eventsChan
 	errcList = append(errcList, errc)
 
 	// Engine events stage: events go through the signatures engine for detection.
 
 	if t.config.EngineConfig.Enabled {
 		eventsChan, errc = t.engineEvents(ctx, eventsChan)
-		*chans = append(*chans, eventsChan)
+		chans["engine"] = eventsChan
 		errcList = append(errcList, errc)
 	}
 
 	// Sink pipeline stage: events go through printers.
 
 	errc = t.sinkEvents(ctx, eventsChan)
-	*chans = append(*chans, eventsChan)
+	chans["sink"] = eventsChan
 	errcList = append(errcList, errc)
 
 	initialized <- struct{}{}

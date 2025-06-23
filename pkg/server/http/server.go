@@ -61,12 +61,12 @@ func (s *Server) EnableHealthzEndpoint() {
 }
 
 // Start starts the http server on the listen address
-func (s *Server) Start(ctx context.Context, chans []<-chan *trace.Event) {
+func (s *Server) Start(ctx context.Context, chans map[string]<-chan *trace.Event) {
 	if chans != nil {
 		s.mux.HandleFunc("/debug/channels", func(w http.ResponseWriter, _ *http.Request) {
 			stats := map[string]map[string]int{}
-			for i, ch := range chans {
-				stats[fmt.Sprintf("pipeline %d", i)] = map[string]int{
+			for name, ch := range chans {
+				stats[name] = map[string]int{
 					"len": len(ch),
 					"cap": cap(ch),
 				}
