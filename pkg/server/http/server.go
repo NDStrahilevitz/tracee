@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"runtime"
 	"time"
 
 	"github.com/aquasecurity/tracee/types/trace"
@@ -110,6 +111,7 @@ func (s *Server) Start(ctx context.Context, chans map[string]<-chan *trace.Event
 
 // EnablePProfEndpoint enables pprof endpoint for debugging
 func (s *Server) EnablePProfEndpoint() {
+	runtime.SetBlockProfileRate(1)
 	s.mux.HandleFunc("/debug/pprof/", pprof.Index)
 	s.mux.Handle("/debug/pprof/allocs", pprof.Handler("allocs"))
 	s.mux.Handle("/debug/pprof/block", pprof.Handler("block"))
